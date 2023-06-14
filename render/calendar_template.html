@@ -1,0 +1,31 @@
+<html>
+<head>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/weather-icons.min.css">
+</head>
+<body>
+<div class="container p-0 m-0">
+    <!-- Calendar -->
+    <div class="calendar shadow bg-white p-3">
+        <!-- Month -->
+        <div class="align-items-center text-center">
+            <div class="month font-weight-bold mb-0 text-uppercase">
+                <i class="wi wi-owm-{forcastImage}" style="font-size: 10rem"></i>
+            </div>
+        </div>
+        <div class="align-items-center text-center">
+            <div class="month font-weight-bold mb-0 text-uppercase" style="padding-bottom:75px">
+                <h2>{forcastString}</h2>
+            </div>
+        </div>
+        <!-- Battery -->
+        <div class="batt_container"><img class="{battText}" src="battery.png" /></div>
+        <!-- Days of week -->
+        <ol class="day-names list-unstyled text-center">{dayOfWeek}</ol>
+        <!-- Calendar and events -->
+        <ol class="days list-unstyled">{events}</ol>
+    </div>
+</div>
+</body>
+</html>
