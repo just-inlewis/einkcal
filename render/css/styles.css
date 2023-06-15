@@ -44,6 +44,15 @@
     color: #6c757d!important;
 }
 
+.text-white {
+    color: #ffffff!important;
+}
+
+.text-uppercase-white {
+    color: #ffffff!important;
+    text-transform: uppercase!important;
+}
+
 dl, ol, ul {
     margin-top: 0;
     margin-bottom: 1rem;
@@ -141,6 +150,14 @@ Calendar Styling */
   font-family: "Quattrocento-Regular";
 }
 
+.calendar .date-white {
+  text-align: center;
+  font-size: 3rem;
+  font-weight: bold;
+  font-family: "Quattrocento-Regular";
+  color:white;
+}
+
 .datecirclebox {
     position: relative;
 }
@@ -156,7 +173,21 @@ Calendar Styling */
     line-height: 4rem;
     text-align:center;
     vertical-align: middle;
-    background:#ff0000;
+    background:#000000;
+}
+
+.datecircle-white {
+    margin: 0rem auto;
+    width:4rem;
+    height:4rem;
+    border-radius:2rem;
+    font-family: "Quattrocento-Regular";
+    font-size:3rem;
+    color:white;
+    line-height: 4rem;
+    text-align:center;
+    vertical-align: middle;
+    background:#ffffff;
 }
 
 .calendar .days li .event {

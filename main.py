@@ -78,7 +78,8 @@ def main():
         logger.info("Weather events retrieved in " + str(dt.datetime.now() - start))
 
         renderService = RenderHelper(imageWidth, imageHeight, rotateAngle)
-        calBlackImage, calRedImage = renderService.process_inputs(calDict, weatherDict)
+        calBlackImage = renderService.process_inputs(calDict, weatherDict, red=False)
+        calRedImage = renderService.process_inputs(calDict, weatherDict, red=True)
 
         if isDisplayToScreen:
             from display.display import DisplayHelper

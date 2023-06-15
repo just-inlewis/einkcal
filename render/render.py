@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-This script essentially generates a HTML file of the calendar I wish to display. It then fires up a headless Chrome
-instance, sized to the resolution of the eInk display and takes a screenshot. This screenshot will then be processed
-to extract the grayscale and red portions, which are then sent to the eInk display for updating.
-
-This might sound like a convoluted way to generate the calendar, but I'm doing so mainly because (i) it's easier to
-format the calendar exactly the way I want it using HTML/CSS, and (ii) I can better delink the generation of the
-calendar and refreshing of the eInk display. In the future, I might choose to generate the calendar on a separate
-RPi device, while using a ESP32 or PiZero purely to just retrieve the image from a file host and update the screen.
-"""
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -49,7 +39,7 @@ class RenderHelper:
             width=target_width,
             height=target_height)
 
-    def get_screenshot(self):
+    def get_screenshot(self, red):
         opts = Options()
         opts.add_argument("--headless")
         opts.add_argument("--hide-scrollbars");
@@ -58,29 +48,18 @@ class RenderHelper:
         self.set_viewport_size(driver)
         driver.get(self.htmlFile)
         sleep(1)
-        driver.get_screenshot_as_file(self.currPath + '/calendar.png')
+        if red:
+            name = '/calendar_red.png'
+        else:
+            name = '/calendar_black.png'
+        driver.get_screenshot_as_file(self.currPath + name)
         driver.quit()
 
         self.logger.info('Screenshot captured and saved to file.')
-
-        redimg = Image.open(self.currPath + '/calendar.png')  # get image)
-        rpixels = redimg.load()  # create the pixel map
-        blackimg = Image.open(self.currPath + '/calendar.png')  # get image)
-        bpixels = blackimg.load()  # create the pixel map
-
-        for i in range(redimg.size[0]):  # loop through every pixel in the image
-            for j in range(redimg.size[1]): # since both bitmaps are identical, cycle only once and not both bitmaps
-                if rpixels[i, j][0] <= rpixels[i, j][1] and rpixels[i, j][0] <= rpixels[i, j][2]:  # if is not red
-                    rpixels[i, j] = (255, 255, 255)  # change it to white in the red image bitmap
-
-                elif bpixels[i, j][0] > bpixels[i, j][1] and bpixels[i, j][0] > bpixels[i, j][2]:  # if is red
-                    bpixels[i, j] = (255, 255, 255)  # change to white in the black image bitmap
-
-        redimg = redimg.rotate(self.rotateAngle, expand=True)
-        blackimg = blackimg.rotate(self.rotateAngle, expand=True)
-
+        img = Image.open(self.currPath + name)  # get image)
+        img = img.rotate(self.rotateAngle, expand=True)
         self.logger.info('Image colours processed. Extracted grayscale and red images.')
-        return blackimg, redimg
+        return img
 
     def get_day_in_cal(self, startDate, eventDate):
         delta = eventDate - startDate
@@ -101,7 +80,7 @@ class RenderHelper:
             datetime_str = '{}{}am'.format(str(datetimeObj.hour), datetime_str)
         return datetime_str
 
-    def process_inputs(self, calDict, weatherDict):
+    def process_inputs(self, calDict, weatherDict, red=False):
         # calDict = {'events': eventList, 'calStartDate': calStartDate, 'today': currDate, 'lastRefresh': currDatetime, 'batteryLevel': batteryLevel}
         # weatherDict = {'high': 75, "low": 55, "pop": 10, "id": 801}
         # first setup list to represent the 5 weeks in our calendar
@@ -154,12 +133,14 @@ class RenderHelper:
             battText = 'battery0'
         elif batteryDisplayMode == 2 and battLevel >= 20.0:
             battText = 'batteryHide'
+        if red:
+            battText = 'batteryHide'
 
         # Populate the day of week row
         cal_days_of_week = ''
         for i in range(0, 7):
-            cal_days_of_week += '<li class="font-weight-bold text-uppercase">' + dayOfWeekText[
-                (i + weekStartDay) % 7] + "</li>\n"
+            cal_days_of_week += '<li class="font-weight-bold {0}">{1}</li>\n'.format("text-uppercase-white" if red else "text-uppercase", dayOfWeekText[
+                (i + weekStartDay) % 7])
 
         # Populate the date and events
         cal_events_text = ''
@@ -167,11 +148,11 @@ class RenderHelper:
             currDate = calDict['calStartDate'] + timedelta(days=i)
             dayOfMonth = currDate.day
             if currDate == calDict['today']:
-                cal_events_text += '<li><div class="datecircle">' + str(dayOfMonth) + '</div>\n'
+                cal_events_text += '<li><div class="{0}">{1}</div>\n'.format("datecircle" if red else "datecircle-white", str(dayOfMonth))
             elif currDate.month != calDict['today'].month:
-                cal_events_text += '<li><div class="date text-muted">' + str(dayOfMonth) + '</div>\n'
+                cal_events_text += '<li><div class="date {0}">{1}</div>\n'.format("text-white" if red else "text-muted", str(dayOfMonth))
             else:
-                cal_events_text += '<li><div class="date">' + str(dayOfMonth) + '</div>\n'
+                cal_events_text += '<li><div class="{0}">{1}</div>\n'.format("date-white" if red else "date", str(dayOfMonth))
 
             for j in range(min(len(calList[i]), maxEventsPerDay)):
                 event = calList[i][j]
@@ -182,7 +163,6 @@ class RenderHelper:
                     if event['startDatetime'].date() == currDate:
                         cal_events_text += '">►' + event['summary']
                     else:
-                        # calHtmlList.append(' text-multiday">')
                         cal_events_text += '">◄' + event['summary']
                 elif event['allday']:
                     cal_events_text += '">' + event['summary']
@@ -198,9 +178,9 @@ class RenderHelper:
         # Append the bottom and write the file
         htmlFile = open(self.currPath + '/calendar.html', "w")
         htmlFile.write(calendar_template.format(month=month_name, battText=battText, dayOfWeek=cal_days_of_week,
-                                                events=cal_events_text, forcastImage=weatherDict['id'], forcastString="{0}% | {1}-{2}°".format(weatherDict['pop'], weatherDict['low'], weatherDict['high'])))
+                                                events=cal_events_text, forcastImage=weatherDict.get('id'), 
+                                                forcastString="{0}% | {1}-{2}°".format(weatherDict.get('pop'), weatherDict.get('low'), weatherDict.get('high')), 
+                                                forcastText="text-white" if red else "text-uppercase"))
         htmlFile.close()
-
-        calBlackImage, calRedImage = self.get_screenshot()
-
-        return calBlackImage, calRedImage
+        image = self.get_screenshot(red)
+        return image
