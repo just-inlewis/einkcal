@@ -203,6 +203,19 @@ Calendar Styling */
   margin-bottom: 1px;
 }
 
+.calendar .days li .event-white {
+  font-size: 1rem;
+  /* font-weight: bold;*/
+  padding: 0.1rem;
+  color: white;
+  /* font-family: "Judson-Regular";*/
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 0rem;
+  margin-bottom: 1px;
+}
+
 .calendar .days li .event.span-2 {
   width: 200%;
 }

@@ -58,7 +58,6 @@ class RenderHelper:
         self.logger.info('Screenshot captured and saved to file.')
         img = Image.open(self.currPath + name)  # get image)
         img = img.rotate(self.rotateAngle, expand=True)
-        self.logger.info('Image colours processed. Extracted grayscale and red images.')
         return img
 
     def get_day_in_cal(self, startDate, eventDate):
@@ -156,8 +155,8 @@ class RenderHelper:
 
             for j in range(min(len(calList[i]), maxEventsPerDay)):
                 event = calList[i][j]
-                cal_events_text += '<div class="event'
-                if currDate.month != calDict['today'].month:
+                cal_events_text += '<div class="{0}'.format("event-white" if red else "event")
+                if currDate.month != calDict['today'].month and not red:
                     cal_events_text += ' text-muted'
                 if event['isMultiday']:
                     if event['startDatetime'].date() == currDate:
@@ -171,7 +170,7 @@ class RenderHelper:
                         'summary']
                 cal_events_text += '</div>\n'
             if len(calList[i]) > maxEventsPerDay:
-                cal_events_text += '<div class="event text-muted">' + str(len(calList[i]) - maxEventsPerDay) + ' more'
+                cal_events_text += '<div class="{0}">{1} more'.format("event-white" if red else "event text-muted", str(len(calList[i]) - maxEventsPerDay))
 
             cal_events_text += '</li>\n'
 
