@@ -50,69 +50,69 @@ def main():
     logger.setLevel(logging.INFO)
     logger.info("Starting daily calendar update")
 
-    # try:
+    try:
         # Establish current date and time information
         # Note: For Python datetime.weekday() - Monday = 0, Sunday = 6
         # For this implementation, each week starts on a Sunday and the calendar begins on the nearest elapsed Sunday
         # The calendar will also display 5 weeks of events to cover the upcoming month, ending on a Saturday
         # powerService = PowerHelper()
         # powerService.sync_time()
-    currBatteryLevel = 100#powerService.get_battery()
-    logger.info('Battery level at start: {:.3f}'.format(currBatteryLevel))
+        currBatteryLevel = 100#powerService.get_battery()
+        logger.info('Battery level at start: {:.3f}'.format(currBatteryLevel))
 
-    currDatetime = dt.datetime.now(displayTZ)
-    logger.info("Time synchronised to {}".format(currDatetime))
-    currDate = currDatetime.date()
-    calStartDate = currDate - dt.timedelta(days=((currDate.weekday() + (7 - weekStartDay)) % 7))
-    calEndDate = calStartDate + dt.timedelta(days=(5 * 7 - 1))
-    calStartDatetime = displayTZ.localize(dt.datetime.combine(calStartDate, dt.datetime.min.time()))
-    calEndDatetime = displayTZ.localize(dt.datetime.combine(calEndDate, dt.datetime.max.time()))
+        currDatetime = dt.datetime.now(displayTZ)
+        logger.info("Time synchronised to {}".format(currDatetime))
+        currDate = currDatetime.date()
+        calStartDate = currDate - dt.timedelta(days=((currDate.weekday() + (7 - weekStartDay)) % 7))
+        calEndDate = calStartDate + dt.timedelta(days=(5 * 7 - 1))
+        calStartDatetime = displayTZ.localize(dt.datetime.combine(calStartDate, dt.datetime.min.time()))
+        calEndDatetime = displayTZ.localize(dt.datetime.combine(calEndDate, dt.datetime.max.time()))
 
-    # Using Google Calendar to retrieve all events within start and end date (inclusive)
-    start = dt.datetime.now()
-    calService = CalHelper()
-    eventList = calService.retrieve_events(calendar, calStartDatetime, calEndDatetime, displayTZ, thresholdHours)
-    logger.info("Calendar events retrieved in " + str(dt.datetime.now() - start))
+        # Using Google Calendar to retrieve all events within start and end date (inclusive)
+        start = dt.datetime.now()
+        calService = CalHelper()
+        eventList = calService.retrieve_events(calendar, calStartDatetime, calEndDatetime, displayTZ, thresholdHours)
+        logger.info("Calendar events retrieved in " + str(dt.datetime.now() - start))
 
-    # Populate dictionary with information to be rendered on e-ink display
-    calDict = {'events': eventList, 'calStartDate': calStartDate, 'today': currDate, 'lastRefresh': currDatetime,
-               'batteryLevel': currBatteryLevel, 'batteryDisplayMode': batteryDisplayMode,
-               'dayOfWeekText': dayOfWeekText, 'weekStartDay': weekStartDay, 'maxEventsPerDay': maxEventsPerDay}
-    
-    weatherService = WeatherHelper()
-    start = dt.datetime.now()
-    weatherDict = weatherService.get_weather(latitude, longitude, apiKey)
-    logger.info("Weather events retrieved in " + str(dt.datetime.now() - start))
+        # Populate dictionary with information to be rendered on e-ink display
+        calDict = {'events': eventList, 'calStartDate': calStartDate, 'today': currDate, 'lastRefresh': currDatetime,
+                   'batteryLevel': currBatteryLevel, 'batteryDisplayMode': batteryDisplayMode,
+                   'dayOfWeekText': dayOfWeekText, 'weekStartDay': weekStartDay, 'maxEventsPerDay': maxEventsPerDay}
+        
+        weatherService = WeatherHelper()
+        start = dt.datetime.now()
+        weatherDict = weatherService.get_weather(latitude, longitude, apiKey)
+        logger.info("Weather events retrieved in " + str(dt.datetime.now() - start))
 
-    renderService = RenderHelper(imageWidth, imageHeight, rotateAngle)
-    calBlackImage, calRedImage = renderService.process_inputs(calDict, weatherDict)
+        renderService = RenderHelper(imageWidth, imageHeight, rotateAngle)
+        calBlackImage, calRedImage = renderService.process_inputs(calDict, weatherDict)
 
-    if isDisplayToScreen:
-        from display.display import DisplayHelper
-        displayService = DisplayHelper(screenWidth, screenHeight)
-        if currDate.weekday() == weekStartDay:
-            # calibrate display once a week to prevent ghosting
-            displayService.calibrate(cycles=0)  # to calibrate in production
-        displayService.update(calBlackImage, calRedImage)
-        displayService.sleep()
+        if isDisplayToScreen:
+            from display.display import DisplayHelper
+            displayService = DisplayHelper(screenWidth, screenHeight)
+            if currDate.weekday() == weekStartDay:
+                # calibrate display once a week to prevent ghosting
+                displayService.calibrate(cycles=0)  # to calibrate in production
+            displayService.update(calBlackImage, calRedImage)
+            displayService.sleep()
 
-    currBatteryLevel = 100#powerService.get_battery()
-    logger.info('Battery level at end: {:.3f}'.format(currBatteryLevel))
+        currBatteryLevel = 100#powerService.get_battery()
+        logger.info('Battery level at end: {:.3f}'.format(currBatteryLevel))
 
-    # except Exception as e:
-    #     logger.error(e)
+    except Exception as e:
+        logger.error(e)
 
-    # logger.info("Completed daily calendar update")
+    logger.info("Completed daily calendar update")
 
-    # logger.info("Checking if configured to shutdown safely - Current hour: {}".format(currDatetime.hour))
-    # if isShutdownOnComplete:
-    #     # implementing a failsafe so that we don't shutdown when debugging
-    #     # checking if it's 6am in the morning, which is the time I've set PiSugar to wake and refresh the calendar
-    #     # if it is 6am, shutdown the RPi. if not 6am, assume I'm debugging the code, so do not shutdown
-    #     if currDatetime.hour == 6:
-    #         logger.info("Shutting down safely.")
-    #         import os
-    #         os.system("sudo shutdown -h now")
+    logger.info("Checking if configured to shutdown safely - Current hour: {}".format(currDatetime.hour))
+    if isShutdownOnComplete:
+        # implementing a failsafe so that we don't shutdown when debugging
+        # checking if it's 6am in the morning, which is the time I've set PiSugar to wake and refresh the calendar
+        # if it is 6am, shutdown the RPi. if not 6am, assume I'm debugging the code, so do not shutdown
+        if currDatetime.hour == 6:
+            logger.info("Shutting down safely.")
+            import os
+            os.system("sudo shutdown -h now")
 
 
 if __name__ == "__main__":
