@@ -55,7 +55,7 @@ body {
     font-size: 1rem;
     font-weight: 400;
     line-height: 1.5;
-    color: #212529;
+    color: #000000;
     text-align: left;
     background-color: #fff;
 }
@@ -163,7 +163,7 @@ Calendar Styling */
   font-size: 1rem;
   /* font-weight: bold;*/
   padding: 0.1rem;
-  /* color: black; */
+  color: black;
   /* font-family: "Judson-Regular";*/
   white-space: nowrap;
   overflow: hidden;

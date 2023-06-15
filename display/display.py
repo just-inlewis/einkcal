@@ -28,8 +28,8 @@ class DisplayHelper:
 
     def calibrate(self, cycles=1):
         # Calibrates the display to prevent ghosting
-        white = Image.new('1', (self.screenwidth, self.screenheight), 'white')
-        black = Image.new('1', (self.screenwidth, self.screenheight), 'black')
+        white = Image.new('1', (self.screenwidth, self.screenheight), 255)
+        black = Image.new('1', (self.screenwidth, self.screenheight), 255)
         for _ in range(cycles):
             self.epd.display(black, white)
             self.epd.display(white, black)
