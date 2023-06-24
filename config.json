@@ -3,7 +3,7 @@
   "thresholdHours": 24,
   "maxEventsPerDay": 3,
   "isDisplayToScreen": true,
-  "isShutdownOnComplete": false,
+  "isShutdownOnComplete": true,
   "batteryDisplayMode": 1,
   "weekStartDay": 6,
   "dayOfWeekText": ["M", "T", "W", "T", "F", "S", "S"],
