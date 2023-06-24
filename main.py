@@ -80,7 +80,7 @@ def main():
 
         renderService = RenderHelper(imageWidth, imageHeight, rotateAngle)
         calBlackImage = renderService.process_inputs(calDict, weatherDict, red=False)
-        # calRedImage = renderService.process_inputs(calDict, weatherDict, red=True)
+        calRedImage = renderService.process_inputs(calDict, weatherDict, red=True)
 
         if isDisplayToScreen:
             from display.display import DisplayHelper
