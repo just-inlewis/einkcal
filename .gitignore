@@ -1,2 +1,7 @@
 
 .DS_Store
+*.pyc
+*.log
+render/calendar.html
+render/calendar_black.png
+render/calendar_red.png
