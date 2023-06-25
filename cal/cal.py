@@ -46,4 +46,5 @@ class CalHelper:
             'isMultiday': self.is_multiday(start, end),
             'summary': event.get('SUMMARY').to_ical().decode().strip()
             })
-        return events
+
+        return sorted(events, key=lambda x: x['startDatetime'])

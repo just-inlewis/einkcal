@@ -9,7 +9,9 @@ from datetime import timedelta
 import pathlib
 from PIL import Image
 import logging
+import math
 
+MAX_LINES = 4
 
 class RenderHelper:
 
@@ -153,11 +155,13 @@ class RenderHelper:
             else:
                 cal_events_text += '<li><div class="{0}">{1}</div>\n'.format("date-white" if red else "date", str(dayOfMonth))
 
-            for j in range(min(len(calList[i]), maxEventsPerDay)):
+            event_count = len(calList[i])
+            for j in range(min(event_count, maxEventsPerDay)):
                 event = calList[i][j]
-                cal_events_text += '<div class="{0}'.format("event-white" if red else "event")
-                if currDate.month != calDict['today'].month and not red:
-                    cal_events_text += ' text-muted'
+                event_line_limit = max(math.floor(MAX_LINES / event_count), 1)
+                cal_events_text += '<div {0}'.format('class="event-white' if red 
+                    else 'style="font-size:1rem;max-height:{0}rem;font-weight:bold;padding:0.1rem;{1}overflow:hidden;text-overflow:ellipsis;border-radius:0rem;margin-bottom:1px;'.format(
+                        1.5 * event_line_limit, "color: #6c757d!important;" if currDate.month != calDict['today'].month and not red else "color:black;"))
                 if event['isMultiday']:
                     if event['startDatetime'].date() == currDate:
                         cal_events_text += '">►' + event['summary']
