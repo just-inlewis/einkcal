@@ -84,7 +84,7 @@ class RenderHelper:
         # weatherDict = {'high': 75, "low": 55, "pop": 10, "id": 801}
         # first setup list to represent the 5 weeks in our calendar
         calList = []
-        for i in range(28):
+        for i in range(35):
             calList.append([])
 
         # retrieve calendar configuration
@@ -181,7 +181,7 @@ class RenderHelper:
         htmlFile.write(calendar_template.format(month=month_name, battText=battText, dayOfWeek=cal_days_of_week,
                                                 events=cal_events_text, forcastImage=weatherDict.get('id'), 
                                                 forcastString="{0}% | {1}-{2}°".format(weatherDict.get('pop'), weatherDict.get('low'), weatherDict.get('high')), 
-                                                forcastText="text-white" if red else "text-uppercase"))
+                                                forcastStyle="text-white" if red else "text-uppercase"))
         htmlFile.close()
         image = self.get_screenshot(red)
         return image
