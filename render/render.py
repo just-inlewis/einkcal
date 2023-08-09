@@ -138,7 +138,7 @@ class RenderHelper:
         # Populate the day of week row
         cal_days_of_week = ''
         for i in range(0, 7):
-            cal_days_of_week += '<li class="font-weight-bold {0}">{1}</li>\n'.format("text-uppercase-white" if red else "text-uppercase", dayOfWeekText[
+            cal_days_of_week += '<li class="{0}">{1}</li>\n'.format("text-uppercase-white" if red else "text-uppercase", dayOfWeekText[
                 (i + weekStartDay) % 7])
 
         # Populate the date and events
