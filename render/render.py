@@ -81,7 +81,7 @@ class RenderHelper:
 
     def process_inputs(self, calDict, weatherDict, red=False):
         # calDict = {'events': eventList, 'calStartDate': calStartDate, 'today': currDate, 'lastRefresh': currDatetime, 'batteryLevel': batteryLevel}
-        # weatherDict = {'high': 75, "low": 55, "pop": 10, "id": 801}
+        # weatherDict = {'high': 75, "low": 55, "pop": 10, "id": 501}
         # first setup list to represent the 5 weeks in our calendar
         calList = []
         for i in range(35):
