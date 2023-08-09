@@ -1,7 +1,7 @@
 {
   "displayTZ": "America/Los_Angeles",
   "thresholdHours": 24,
-  "maxEventsPerDay": 3,
+  "maxEventsPerDay": 4,
   "isDisplayToScreen": true,
   "isShutdownOnComplete": true,
   "batteryDisplayMode": 1,

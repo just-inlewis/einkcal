@@ -156,7 +156,7 @@ class RenderHelper:
             event_count = len(calList[i])
             for j in range(min(event_count, maxEventsPerDay)):
                 event = calList[i][j]
-                event_line_limit = max(math.floor(maxEventsPerDay + 1 / event_count), 1)
+                event_line_limit = max(math.floor(maxEventsPerDay / event_count), 1)
                 cal_events_text += '<div {0}'.format('class="event-white' if red 
                     else 'style="font-size:1rem;max-height:{0}rem;padding:0.1rem;{1}overflow:hidden;text-overflow:ellipsis;border-radius:0rem;margin-bottom:1px;'.format(
                         1.5 * event_line_limit, "color: #6c757d!important;" if currDate.month != calDict['today'].month and not red else "color:black;"))
