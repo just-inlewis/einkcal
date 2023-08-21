@@ -6,6 +6,7 @@ This part of the code exposes functions to interface with the eink display
 
 import display.epd12in48b as eink
 from PIL import Image
+from PIL import ImageDraw
 import logging
 
 
@@ -41,3 +42,12 @@ class DisplayHelper:
         self.epd.EPD_Sleep()
         self.logger.info('E-Ink display entered deep sleep.')
 
+    def displayError(message):
+        blackError = Image.new("1", (screenWidth, screenHeight), 255)
+        redError = Image.new("1", (screenWidth, screenHeight), 255)
+        drawError = ImageDraw.Draw(blackError)
+        drawError.text((600, 90), message, fill="black")
+        blackError = blackError.rotate(180) 
+        redError = redError.rotate(180) 
+        self.update(blackError, redError)
+        self.sleep()
