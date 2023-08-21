@@ -36,6 +36,7 @@ def main():
     latitude = config['lat'] # latitude for open weather call
     longitude = config['long'] # longitude for open weather call
     apiKey = config['openweatherapi'] # api key for open weather clal
+    updateTime = config['dailyUpdateTime'] # hour of day data is refreshed, this ensures device wont shut down during testing
 
     # Create and configure logger
     logging.basicConfig(filename="logfile.log", format='%(asctime)s %(levelname)s - %(message)s', filemode='a')
@@ -101,8 +102,9 @@ def main():
 
     logger.info("Checking if configured to shutdown safely - Current hour: {}".format(currDatetime.hour))
     if isShutdownOnComplete:
-        logger.info("Shutting down safely.")
-        os.system("sudo shutdown -h now")
+        if currDatetime.hour == updateTime:
+            logger.info("Shutting down safely.")
+            os.system("sudo shutdown -h now")
 
 if __name__ == "__main__":
     main()
