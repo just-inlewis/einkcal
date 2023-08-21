@@ -18,7 +18,7 @@ class CalHelper:
             formattedDate = date.astimezone(localTZ)
         except:
             allDayEvent = True
-            formattedDate = (datetime.datetime(date.year, date.month, date.day) - datetime.timedelta(days=offset)).astimezone(localTZ)
+            formattedDate = (datetime.datetime(date.year, date.month, date.day) + datetime.timedelta(days=offset)).astimezone(localTZ)
         return formattedDate, allDayEvent
 
     def is_multiday(self, start, end):
