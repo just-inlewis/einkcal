@@ -9,6 +9,7 @@ from cal.cal import CalHelper
 from render.render import RenderHelper
 from weather.weather import WeatherHelper
 from power.power import PowerHelper
+from display.display import DisplayHelper
 import json
 import logging
 import os
@@ -44,6 +45,7 @@ def main():
     logger.addHandler(logging.StreamHandler(sys.stdout))  # print logger to stdout
     logger.setLevel(logging.INFO)
     logger.info("Starting daily calendar update")
+    currDatetime = dt.datetime.now(displayTZ)
 
     try:
         # Establish current date and time information
@@ -84,7 +86,6 @@ def main():
         calRedImage = renderService.process_inputs(calDict, weatherDict, red=True)
 
         if isDisplayToScreen:
-            from display.display import DisplayHelper
             displayService = DisplayHelper(screenWidth, screenHeight)
             if currDate.weekday() == weekStartDay:
                 # calibrate display once a week to prevent ghosting
@@ -94,18 +95,20 @@ def main():
 
         currBatteryLevel = powerService.get_battery()
         logger.info('Battery level at end: {:.3f}'.format(currBatteryLevel))
+        logger.info("Completed daily calendar update")
 
     except Exception as e:
         traceback.print_exc()
+        displayErrorService = DisplayHelper(screenWidth, screenHeight)
+        displayErrorService.displayError(e)
         logger.error(e)
-
-    logger.info("Completed daily calendar update")
-
-    logger.info("Checking if configured to shutdown safely - Current hour: {}".format(currDatetime.hour))
-    if isShutdownOnComplete:
-        if currDatetime.hour == updateTime:
-            logger.info("Shutting down safely.")
-            os.system("sudo shutdown -h now")
+        
+    finally:
+        logger.info("Checking if configured to shutdown safely - Current hour: {}".format(currDatetime.hour))
+        if isShutdownOnComplete:
+            if currDatetime.hour == updateTime:
+                logger.info("Shutting down safely.")
+                os.system("sudo shutdown -h now")
 
 if __name__ == "__main__":
     main()
