@@ -15,5 +15,6 @@
   "calendar": "https://p25-caldav.icloud.com/published/2/MTA1NzY0ODM4MjEwNTc2NHwS2pTkV3Pgzyw54pm-P9Q3h6S8Pi4E3fu7REqOnzZ0dIBwF3rj8pi4qSF9ZzVhjdMtJ0EP04p7CYr8_CHEr-s",
   "lat": 47.63524,
   "long": -122.03581,
-  "openweatherapi": "3b81ee59ec8070552646209ee28549d0"
+  "openweatherapi": "3b81ee59ec8070552646209ee28549d0",
+  "dailyUpdateTime": 12
 }
