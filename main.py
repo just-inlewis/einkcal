@@ -12,7 +12,7 @@ from power.power import PowerHelper
 import json
 import logging
 import os
-
+import traceback
 
 def main():
     # Basic configuration settings (user replaceable)
@@ -96,6 +96,7 @@ def main():
         logger.info('Battery level at end: {:.3f}'.format(currBatteryLevel))
 
     except Exception as e:
+        traceback.print_exc()
         logger.error(e)
 
     logger.info("Completed daily calendar update")
