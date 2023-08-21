@@ -127,7 +127,7 @@ class RenderHelper:
                 battText = 'battery40'
             elif battLevel >= 20:
                 battText = 'battery20'
-            else:
+            elif battLevel < 12:
                 battText = 'battery0'
 
         elif batteryDisplayMode == 2 and battLevel < 20.0:
