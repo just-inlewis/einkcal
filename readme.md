@@ -68,7 +68,13 @@
     sudo systemctl enable einkcal.service
     ```
 
-8. **Reboot:**
+8. **Schedule wakeups:**
+    ```sh
+    http://x.x.x.x:8421
+    ```
+    Set Schedule Wake Up to 00:30 and Safe Shutdown to <= 10%
+    
+9. **Reboot:**
     After completing the steps above, reboot the Raspberry Pi Zero 2:
     ```sh
     sudo reboot
