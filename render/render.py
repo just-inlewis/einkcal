@@ -40,11 +40,12 @@ class RenderHelper:
             height=target_height)
 
     def get_screenshot(self, red):
+        service = ChromeService(executable_path='/usr/bin/chromedriver')
         opts = Options()
         opts.add_argument("--headless")
         opts.add_argument("--hide-scrollbars");
         opts.add_argument('--force-device-scale-factor=1')
-        driver = webdriver.Chrome(options=opts)
+        driver = webdriver.Chrome(service=service, options=opts)
         self.set_viewport_size(driver)
         driver.get(self.htmlFile)
         sleep(1)
