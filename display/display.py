@@ -42,12 +42,12 @@ class DisplayHelper:
         self.epd.EPD_Sleep()
         self.logger.info('E-Ink display entered deep sleep.')
 
-    def displayError(message):
-        blackError = Image.new("1", (screenWidth, screenHeight), 255)
-        redError = Image.new("1", (screenWidth, screenHeight), 255)
+    def displayError(self, message):
+        blackError = Image.new("1", (self.screenwidth, self.screenheight), 255)
+        redError = Image.new("1", (self.screenwidth, self.screenheight), 255)
         drawError = ImageDraw.Draw(blackError)
-        drawError.text((600, 90), message, fill="black")
-        blackError = blackError.rotate(180) 
-        redError = redError.rotate(180) 
+        drawError.text((self.screenwidth/2, self.screenheight/2), message, fill="black")
+        blackError = blackError.rotate(180)
+        redError = redError.rotate(180)
         self.update(blackError, redError)
         self.sleep()
