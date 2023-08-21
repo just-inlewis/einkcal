@@ -100,7 +100,7 @@ def main():
     except Exception as e:
         traceback.print_exc()
         displayErrorService = DisplayHelper(screenWidth, screenHeight)
-        displayErrorService.displayError(e)
+        displayErrorService.displayError(str(e))
         logger.error(e)
         
     finally:
