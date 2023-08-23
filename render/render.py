@@ -15,7 +15,7 @@ import math
 class RenderHelper:
 
     def __init__(self, width, height, angle):
-        self.logger = logging.getLogger('maginkcal')
+        self.logger = logging.getLogger('einkcal')
         self.currPath = str(pathlib.Path(__file__).parent.absolute())
         self.htmlFile = 'file://' + self.currPath + '/calendar.html'
         self.imageWidth = width
