@@ -10,7 +10,7 @@ import logging
 class CalHelper:
 
     def __init__(self):
-        self.logger = logging.getLogger('maginkcal')
+        self.logger = logging.getLogger('einkcal')
 
     def retry_strategy(self):
         return requests.adapters.Retry(
