@@ -12,6 +12,14 @@ class CalHelper:
     def __init__(self):
         self.logger = logging.getLogger('maginkcal')
 
+    def retry_strategy(self):
+        return requests.adapters.Retry(
+            total=3,
+            status_forcelist=[500, 502, 503, 504],
+            backoff_factor=2,
+            method_whitelist=False
+        )
+
     def get_datetime(self, date, localTZ, offset=0):
         allDayEvent = False
         try:
@@ -26,7 +34,9 @@ class CalHelper:
         return start.date() != end.date()
 
     def retrieve_events(self, calendar, startDate, endDate, localTZ, thresholdHours):
-        r = requests.get(calendar)
+        session = requests.Session()
+        session.mount("https://", requests.adapters.HTTPAdapter(max_retries=self.retry_strategy()))
+        r = session.get(calendar)
         cal = Calendar.from_ical(r.text)
         events = []
         for event in cal.walk('VEVENT'):
