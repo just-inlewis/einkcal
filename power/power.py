@@ -11,7 +11,7 @@ import logging
 class PowerHelper:
 
     def __init__(self):
-        self.logger = logging.getLogger('maginkcal')
+        self.logger = logging.getLogger('einkcal')
 
     def get_battery(self):
         # start displaying on eink display
