@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service as ChromeService
-from time import sleep
 from datetime import timedelta
 import pathlib
 from PIL import Image
 import logging
+import subprocess
 import math
 
 class RenderHelper:
@@ -17,46 +13,27 @@ class RenderHelper:
     def __init__(self, width, height, angle):
         self.logger = logging.getLogger('einkcal')
         self.currPath = str(pathlib.Path(__file__).parent.absolute())
-        self.htmlFile = 'file://' + self.currPath + '/calendar.html'
+        self.htmlFile = self.currPath + '/calendar.html'
         self.imageWidth = width
         self.imageHeight = height
         self.rotateAngle = angle
 
-    def set_viewport_size(self, driver):
-
-        # Extract the current window size from the driver
-        current_window_size = driver.get_window_size()
-
-        # Extract the client window size from the html tag
-        html = driver.find_element(By.TAG_NAME,'html')
-        inner_width = int(html.get_attribute("clientWidth"))
-        inner_height = int(html.get_attribute("clientHeight"))
-
-        # "Internal width you want to set+Set "outer frame width" to window size
-        target_width = self.imageWidth + (current_window_size["width"] - inner_width)
-        target_height = self.imageHeight + (current_window_size["height"] - inner_height)
-
-        driver.set_window_rect(
-            width=target_width,
-            height=target_height)
-
     def get_screenshot(self, red):
-        service = ChromeService(executable_path='/usr/bin/chromedriver')
-        opts = Options()
-        opts.add_argument("--headless")
-        opts.add_argument("--hide-scrollbars");
-        opts.add_argument('--force-device-scale-factor=1')
-        driver = webdriver.Chrome(service=service, options=opts)
-        self.set_viewport_size(driver)
-        driver.get(self.htmlFile)
-        sleep(1)
         if red:
             name = '/calendar_red.png'
         else:
             name = '/calendar_black.png'
-        driver.get_screenshot_as_file(self.currPath + name)
-        driver.quit()
-
+        result = subprocess.check_output(['wkhtmltoimage', 
+                                          '--enable-local-file-access',
+                                          '--height',
+                                          '1304',
+                                          '--width',
+                                          '984',
+                                          self.htmlFile,
+                                          self.currPath + name
+                                          ])
+        result_str = result.decode('utf-8').rstrip()
+        self.logger.info(result_str)
         self.logger.info('Screenshot captured and saved to file.')
         img = Image.open(self.currPath + name)  # get image)
         img = img.rotate(self.rotateAngle, expand=True)
