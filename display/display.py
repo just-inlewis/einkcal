@@ -23,7 +23,7 @@ class DisplayHelper:
     def clear(self, callback=None):
         epd.enqueue(epd.clear, callback=callback)
 
-    def update(self, blackimg, redimg, callback=callback):
+    def update(self, blackimg, redimg, callback=None):
         # Updates the display with the grayscale and red images
         # start displaying on eink display
         self.logger.info('Enqueuing E-Ink display update.')
