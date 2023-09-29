@@ -29,6 +29,10 @@
     pip3 install Pillow
     pip3 install icalendar
     ```
+    If `wiringpi` fails, try:
+    ```wget https://project-downloads.drogon.net/wiringpi-latest.deb
+    sudo dpkg -i wiringpi-latest.deb
+    gpio -v```
 
 6. **Clone einkcal and Install Dependencies:**
     ```sh
