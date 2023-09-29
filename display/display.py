@@ -21,6 +21,7 @@ class DisplayHelper:
         self.epd.enqueue(self.epd.Init, callback=None)
 
     def clear(self, callback=None):
+        self.logger.info('Enqueuing E-Ink display clear.')
         self.epd.enqueue(self.epd.clear, callback=callback)
 
     def update(self, blackimg, redimg, callback=None):
@@ -41,7 +42,7 @@ class DisplayHelper:
 
     def sleep(self, callback=None):
         # send E-Ink display to deep sleep
-        self.logger.info('Telling E-Ink display to entered deep sleep.')
+        self.logger.info('Enqueuing E-Ink display to entered deep sleep.')
         self.epd.enqueue(self.epd.EPD_Sleep, callback=callback)
 
     def displayError(self, message, callback=None):
