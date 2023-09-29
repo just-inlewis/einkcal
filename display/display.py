@@ -18,16 +18,16 @@ class DisplayHelper:
         self.screenwidth = width
         self.screenheight = height
         self.epd = eink.EPD(final_callback)
-        self.epd.enqueue(self.epd.Init, callback=None)
+        self.self.epd.enqueue(self.self.epd.Init, callback=None)
 
     def clear(self, callback=None):
-        epd.enqueue(epd.clear, callback=callback)
+        self.epd.enqueue(self.epd.clear, callback=callback)
 
     def update(self, blackimg, redimg, callback=None):
         # Updates the display with the grayscale and red images
         # start displaying on eink display
         self.logger.info('Enqueuing E-Ink display update.')
-        epd.enqueue(epd.display, blackimg, redimg, callback=callback)
+        self.epd.enqueue(self.epd.display, blackimg, redimg, callback=callback)
 
     def calibrate(self, cycles=1, callback=None):
         # Calibrates the display to prevent ghosting
@@ -35,14 +35,14 @@ class DisplayHelper:
         black = Image.new('1', (self.screenwidth, self.screenheight), 255)
         self.logger.info('Enqueuing E-Ink display calibration.')
         for _ in range(cycles):
-            epd.enqueue(epd.display, black, white, callback=callback)
-            epd.enqueue(epd.display, white, black, callback=callback)
-            epd.enqueue(epd.display, white, white, callback=callback)
+            self.epd.enqueue(self.epd.display, black, white, callback=callback)
+            self.epd.enqueue(self.epd.display, white, black, callback=callback)
+            self.epd.enqueue(self.epd.display, white, white, callback=callback)
 
     def sleep(self, callback=None):
         # send E-Ink display to deep sleep
         self.logger.info('Telling E-Ink display to entered deep sleep.')
-        epd.enqueue(epd.EPD_Sleep, callback=callback)
+        self.epd.enqueue(self.epd.EPD_Sleep, callback=callback)
 
     def displayError(self, message, callback=None):
         blackError = Image.new("1", (self.screenwidth, self.screenheight), 255)
