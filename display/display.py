@@ -18,7 +18,7 @@ class DisplayHelper:
         self.screenwidth = width
         self.screenheight = height
         self.epd = eink.EPD(final_callback)
-        self.epd.enqueue(epd.Init, callback=None)
+        self.epd.enqueue(self.epd.Init, callback=None)
 
     def clear(self, callback=None):
         epd.enqueue(epd.clear, callback=callback)
