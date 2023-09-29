@@ -29,7 +29,7 @@ class DisplayHelper:
         self.logger.info('Enqueuing E-Ink display update.')
         epd.enqueue(epd.display, blackimg, redimg, callback=callback)
 
-    def calibrate(self, cycles=1, callback=callback):
+    def calibrate(self, cycles=1, callback=None):
         # Calibrates the display to prevent ghosting
         white = Image.new('1', (self.screenwidth, self.screenheight), 255)
         black = Image.new('1', (self.screenwidth, self.screenheight), 255)
@@ -39,12 +39,12 @@ class DisplayHelper:
             epd.enqueue(epd.display, white, black, callback=callback)
             epd.enqueue(epd.display, white, white, callback=callback)
 
-    def sleep(self, callback=callback):
+    def sleep(self, callback=None):
         # send E-Ink display to deep sleep
         self.logger.info('Telling E-Ink display to entered deep sleep.')
         epd.enqueue(epd.EPD_Sleep, callback=callback)
 
-    def displayError(self, message, callback=callback):
+    def displayError(self, message, callback=None):
         blackError = Image.new("1", (self.screenwidth, self.screenheight), 255)
         redError = Image.new("1", (self.screenwidth, self.screenheight), 255)
         drawError = ImageDraw.Draw(blackError)
