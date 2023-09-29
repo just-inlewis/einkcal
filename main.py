@@ -15,6 +15,11 @@ import logging
 import os
 import traceback
 
+logging.basicConfig(filename="logfile.log", format='%(asctime)s %(levelname)s - %(message)s', filemode='a')
+logger = logging.getLogger('einkcal')
+logger.addHandler(logging.StreamHandler(sys.stdout))  # print logger to stdout
+logger.setLevel(logging.INFO)
+logger.info("Starting daily calendar update")
 
 configFile = open('config.json')
 config = json.load(configFile)
@@ -50,12 +55,6 @@ def shutdown():
 
 def main():
     # Create and configure logger
-    logging.basicConfig(filename="logfile.log", format='%(asctime)s %(levelname)s - %(message)s', filemode='a')
-    logger = logging.getLogger('einkcal')
-    logger.addHandler(logging.StreamHandler(sys.stdout))  # print logger to stdout
-    logger.setLevel(logging.INFO)
-    logger.info("Starting daily calendar update")
-
     try:
         # Establish current date and time information
         # Note: For Python datetime.weekday() - Monday = 0, Sunday = 6
@@ -65,6 +64,8 @@ def main():
         powerService.sync_time()
         currBatteryLevel = powerService.get_battery()
         logger.info('Battery level at start: {:.3f}'.format(currBatteryLevel))
+        displayService = DisplayHelper(screenWidth, screenHeight, showdown)
+        displayService.clear()
 
         currDatetime = dt.datetime.now(displayTZ)
         logger.info("Time synchronised to {}".format(currDatetime))
@@ -95,7 +96,6 @@ def main():
         calRedImage = renderService.process_inputs(calDict, weatherDict, red=True)
 
         if isDisplayToScreen:
-            displayService = DisplayHelper(screenWidth, screenHeight, showdown)
             if currDate.weekday() == weekStartDay:
                 # calibrate display once a week to prevent ghosting
                 displayService.calibrate(cycles=0)  # to calibrate in production
@@ -108,7 +108,7 @@ def main():
 
     except Exception as e:
         traceback.print_exc()
-        displayErrorService = DisplayHelper(screenWidth, screenHeight, shutdown)
+        displayErrorService = DisplayHelper(screenWidth, screenHeight, showdown)
         displayErrorService.displayError(str(e))
         logger.error(e)
                 
