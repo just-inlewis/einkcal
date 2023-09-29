@@ -64,7 +64,7 @@ def main():
         powerService.sync_time()
         currBatteryLevel = powerService.get_battery()
         logger.info('Battery level at start: {:.3f}'.format(currBatteryLevel))
-        displayService = DisplayHelper(screenWidth, screenHeight, showdown)
+        displayService = DisplayHelper(screenWidth, screenHeight, shutdown)
         displayService.clear()
 
         currDatetime = dt.datetime.now(displayTZ)
@@ -108,7 +108,7 @@ def main():
 
     except Exception as e:
         traceback.print_exc()
-        displayErrorService = DisplayHelper(screenWidth, screenHeight, showdown)
+        displayErrorService = DisplayHelper(screenWidth, screenHeight, shutdown)
         displayErrorService.displayError(str(e))
         logger.error(e)
                 
