@@ -16,7 +16,6 @@
 
 .text-uppercase {
     font-weight: bold;
-    color:black;
     text-transform: uppercase!important;
 }
 
@@ -128,7 +127,6 @@ Calendar Styling */
   text-align: center;
   font-size: 3rem;
   font-weight: bold;
-  color:black;
   font-family: "Noto Sans";
 }
 
