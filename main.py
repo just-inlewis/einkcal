@@ -15,37 +15,46 @@ import logging
 import os
 import traceback
 
+
+configFile = open('config.json')
+config = json.load(configFile)
+
+# Basic configuration settings (user replaceable)
+displayTZ = timezone(config['displayTZ']) # list of timezones - print(pytz.all_timezones)
+thresholdHours = config['thresholdHours']  # considers events updated within last 12 hours as recently updated
+maxEventsPerDay = config['maxEventsPerDay']  # limits number of events to display (remainder displayed as '+X more')
+isDisplayToScreen = config['isDisplayToScreen']  # set to true when debugging rendering without displaying to screen
+isShutdownOnComplete = config['isShutdownOnComplete']  # set to true to conserve power, false if in debugging mode
+batteryDisplayMode = config['batteryDisplayMode']  # 0: do not show / 1: always show / 2: show when battery is low
+weekStartDay = config['weekStartDay']  # Monday = 0, Sunday = 6
+dayOfWeekText = config['dayOfWeekText'] # Monday as first item in list
+screenWidth = config['screenWidth']  # Width of E-Ink display. Default is landscape. Need to rotate image to fit.
+screenHeight = config['screenHeight']  # Height of E-Ink display. Default is landscape. Need to rotate image to fit.
+imageWidth = config['imageWidth']  # Width of image to be generated for display.
+imageHeight = config['imageHeight'] # Height of image to be generated for display.
+rotateAngle = config['rotateAngle']  # If image is rendered in portrait orientation, angle to rotate to fit screen
+calendar = config['calendar']  # calendar url
+latitude = config['lat'] # latitude for open weather call
+longitude = config['long'] # longitude for open weather call
+apiKey = config['openweatherapi'] # api key for open weather clal
+updateTime = config['dailyUpdateTime'] # hour of day data is refreshed, this ensures device wont shut down during testing
+
+def shutdown():
+    currDatetime = dt.datetime.now(displayTZ)
+    logger.info("Checking if configured to shutdown safely - Current hour: {}".format(currDatetime.hour))
+    if isShutdownOnComplete:
+        if currDatetime.hour == updateTime:
+            logger.info("Shutting down safely.")
+            os.system("sudo shutdown -h now")
+
+
 def main():
-    # Basic configuration settings (user replaceable)
-    configFile = open('config.json')
-    config = json.load(configFile)
-
-    displayTZ = timezone(config['displayTZ']) # list of timezones - print(pytz.all_timezones)
-    thresholdHours = config['thresholdHours']  # considers events updated within last 12 hours as recently updated
-    maxEventsPerDay = config['maxEventsPerDay']  # limits number of events to display (remainder displayed as '+X more')
-    isDisplayToScreen = config['isDisplayToScreen']  # set to true when debugging rendering without displaying to screen
-    isShutdownOnComplete = config['isShutdownOnComplete']  # set to true to conserve power, false if in debugging mode
-    batteryDisplayMode = config['batteryDisplayMode']  # 0: do not show / 1: always show / 2: show when battery is low
-    weekStartDay = config['weekStartDay']  # Monday = 0, Sunday = 6
-    dayOfWeekText = config['dayOfWeekText'] # Monday as first item in list
-    screenWidth = config['screenWidth']  # Width of E-Ink display. Default is landscape. Need to rotate image to fit.
-    screenHeight = config['screenHeight']  # Height of E-Ink display. Default is landscape. Need to rotate image to fit.
-    imageWidth = config['imageWidth']  # Width of image to be generated for display.
-    imageHeight = config['imageHeight'] # Height of image to be generated for display.
-    rotateAngle = config['rotateAngle']  # If image is rendered in portrait orientation, angle to rotate to fit screen
-    calendar = config['calendar']  # calendar url
-    latitude = config['lat'] # latitude for open weather call
-    longitude = config['long'] # longitude for open weather call
-    apiKey = config['openweatherapi'] # api key for open weather clal
-    updateTime = config['dailyUpdateTime'] # hour of day data is refreshed, this ensures device wont shut down during testing
-
     # Create and configure logger
     logging.basicConfig(filename="logfile.log", format='%(asctime)s %(levelname)s - %(message)s', filemode='a')
     logger = logging.getLogger('einkcal')
     logger.addHandler(logging.StreamHandler(sys.stdout))  # print logger to stdout
     logger.setLevel(logging.INFO)
     logger.info("Starting daily calendar update")
-    currDatetime = dt.datetime.now(displayTZ)
 
     try:
         # Establish current date and time information
@@ -86,7 +95,7 @@ def main():
         calRedImage = renderService.process_inputs(calDict, weatherDict, red=True)
 
         if isDisplayToScreen:
-            displayService = DisplayHelper(screenWidth, screenHeight)
+            displayService = DisplayHelper(screenWidth, screenHeight, showdown)
             if currDate.weekday() == weekStartDay:
                 # calibrate display once a week to prevent ghosting
                 displayService.calibrate(cycles=0)  # to calibrate in production
@@ -99,16 +108,10 @@ def main():
 
     except Exception as e:
         traceback.print_exc()
-        displayErrorService = DisplayHelper(screenWidth, screenHeight)
+        displayErrorService = DisplayHelper(screenWidth, screenHeight, showdown)
         displayErrorService.displayError(str(e))
         logger.error(e)
-        
-    finally:
-        logger.info("Checking if configured to shutdown safely - Current hour: {}".format(currDatetime.hour))
-        if isShutdownOnComplete:
-            if currDatetime.hour == updateTime:
-                logger.info("Shutting down safely.")
-                os.system("sudo shutdown -h now")
+                
 
 if __name__ == "__main__":
     main()
