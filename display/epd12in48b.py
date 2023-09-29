@@ -26,8 +26,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-import queue
-import threading
 import time
 import display.epdconfig as epdconfig
 
@@ -35,11 +33,7 @@ EPD_WIDTH       = 1304
 EPD_HEIGHT      = 984
 
 class EPD(object):
-    def __init__(self, final_callback):
-        self.tasks = queue.Queue()
-        self.worker_thread = threading.Thread(target=self._process_tasks)
-        self.worker_thread.start()
-        self.final_callback = final_callback
+    def __init__(self):
         self.width = EPD_WIDTH
         self.height = EPD_HEIGHT
         
@@ -58,24 +52,6 @@ class EPD(object):
         self.EPD_S1_BUSY_PIN  = epdconfig.EPD_S1_BUSY_PIN
         self.EPD_M2_BUSY_PIN  = epdconfig.EPD_M2_BUSY_PIN
         self.EPD_S2_BUSY_PIN  = epdconfig.EPD_S2_BUSY_PIN
-
-    def enqueue(self, task, *args, callback=None, **kwargs):
-        self.tasks.put((task, callback, args, kwargs))
-
-    def _process_tasks(self):
-        while True:
-            task, callback, args, kwargs = self.tasks.get()
-            try:
-                result = task(*args, **kwargs)
-                if callback:
-                    callback(result)
-            except Exception as e:
-                print(f"Error executing task: {e}")
-                if callback:
-                    callback(None, error=e)
-            self.tasks.task_done()
-            if self.tasks.empty() and self.final_callback:
-                self.final_callback()
 
     def Init(self):
         print("EPD init...")
