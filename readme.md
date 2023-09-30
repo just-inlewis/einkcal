@@ -21,11 +21,10 @@
     sudo apt-get install git
     sudo apt-get install python3-pip
     sudo apt-get install wiringpi
-    sudo apt-get install chromium-chromedriver
+    sudo apt-get install wkhtmltopdf
     pip3 install RPi.GPIO
     pip3 install spidev
     pip3 install pytz
-    pip3 install selenium
     pip3 install Pillow
     pip3 install icalendar
     ```
