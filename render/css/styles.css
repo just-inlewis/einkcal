@@ -212,7 +212,6 @@ Calendar Styling */
 
 .calendar .days li .event {
   font-size: 1rem;
-  padding: 0.1rem;
   color: black;
   font-family: "NotoSansBold";
   white-space: nowrap;
