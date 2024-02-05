@@ -130,7 +130,7 @@ class RenderHelper:
             elif currDate.month != calDict['today'].month:
                 cal_events_text += '<li><div class="date {0}">{1}</div>\n'.format("text-white" if red else "text-muted", str(dayOfMonth))
             else:
-                cal_events_text += '<li><div class="{0}">{1}</div>\n'.format("date-white" if red else "date", str(dayOfMonth))
+                cal_events_text += '<li><div class="date" style="color:{0};">{1}</div>\n'.format("white" if red else "black", str(dayOfMonth))
 
             event_count = len(calList[i])
             for j in range(min(event_count, maxEventsPerDay)):
