@@ -136,9 +136,8 @@ class RenderHelper:
             for j in range(min(event_count, maxEventsPerDay)):
                 event = calList[i][j]
                 event_line_limit = max(math.floor(maxEventsPerDay / event_count), 1)
-                cal_events_text += '<div {0}'.format('class="event-white' if red 
-                    else 'style="overflow:hidden;font-weight:bold;line-height:1.5em;height:{0}em;{1}'.format(
-                        1.5 * event_line_limit, "color: #6c757d!important;" if currDate.month != calDict['today'].month and not red else "color:black;"))
+                event_color = "color:black;" if red else "color: #6c757d!important;" if currDate.month != calDict['today'].month and not red else "color:black;"
+                cal_events_text += '<div {0}'.format('style="overflow:hidden;font-weight:bold;line-height:1.5em;height:{0}em;{1}'.format(1.5 * event_line_limit, event_color))
                 if event['isMultiday']:
                     if event['startDatetime'].date() == currDate:
                         cal_events_text += '">►' + event['summary']
