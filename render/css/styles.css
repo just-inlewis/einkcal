@@ -218,18 +218,15 @@ Calendar Styling */
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 0rem;
-  margin-bottom: 1px;
 }
 
 .calendar .days li .event-white {
   font-size: 1rem;
-  padding: 0.1rem;
   color: white;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 0rem;
-  margin-bottom: 1px;
 }
 
 .calendar .days li .event.span-2 {
