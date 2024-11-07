@@ -37,7 +37,8 @@ class PowerHelper:
     def sync_time(self):
         # To sync PiSugar RTC with current time
         try:
-            ps = subprocess.Popen(('echo', 'rtc_rtc2pi'), stdout=subprocess.PIPE)
+            # ps = subprocess.Popen(('echo', 'rtc_rtc2pi'), stdout=subprocess.PIPE)
+            ps = subprocess.Popen(('echo', 'rtc_web'), stdout=subprocess.PIPE) # prefer web time to accommodate DST
             result = subprocess.check_output(('nc', '-q', '0', '127.0.0.1', '8423'), stdin=ps.stdout)
             ps.wait()
         except subprocess.CalledProcessError:
