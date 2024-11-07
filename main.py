@@ -105,8 +105,8 @@ def main():
         
     finally:
         logger.info("Checking if configured to shutdown safely - Current hour: {}".format(currDatetime.hour))
-        if isShutdownOnComplete:
-            if currDatetime.hour == updateTime:
+        if isShutdownOnComplete:            
+            if abs(currDatetime.hour - updateTime) <= 2:
                 logger.info("Shutting down safely.")
                 os.system("sudo shutdown -h now")
 
