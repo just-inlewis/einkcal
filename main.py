@@ -110,5 +110,7 @@ def main():
         logger.info("Shutting down safely.")
         os.system("sudo shutdown -h now")
 
+# journalctl SYSLOG_IDENTIFIER=einkcal -r
+
 if __name__ == "__main__":
     main()
