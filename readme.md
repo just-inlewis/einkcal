@@ -50,8 +50,9 @@
     ```ini
     [Unit]
     Description=einkcal
-    After=multi-user.target
-
+    After=multi-user.target network-online.target systemd-time-wait-sync.service
+    Wants=network-online.target systemd-time-wait-sync.service
+    
     [Service]
     Type=idle
     User=pi
@@ -60,10 +61,9 @@
     StandardOutput=syslog
     StandardError=syslog
     SyslogIdentifier=einkcal
-
+    
     [Install]
     WantedBy=multi-user.target
-    WantedBy=network-online.target
     ```
 
     c) Set the correct permissions and reload systemd:
