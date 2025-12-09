@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import traceback
+import time
 
 def main():
     # Basic configuration settings (user replaceable)
@@ -46,13 +47,13 @@ def main():
     logger.setLevel(logging.INFO)
     logger.info("Starting daily calendar update")
     currDatetime = dt.datetime.now(displayTZ)
+    powerService = PowerHelper()
 
     try:
         # Establish current date and time information
         # Note: For Python datetime.weekday() - Monday = 0, Sunday = 6
         # For this implementation, each week starts on a Sunday and the calendar begins on the nearest elapsed Sunday
         # The calendar will also display 5 weeks of events to cover the upcoming month, ending on a Saturday
-        powerService = PowerHelper()
         powerService.sync_time()
         currBatteryLevel = powerService.get_battery()
         logger.info('Battery level at start: {:.3f}'.format(currBatteryLevel))
@@ -87,9 +88,6 @@ def main():
 
         if isDisplayToScreen:
             displayService = DisplayHelper(screenWidth, screenHeight)
-            # if currDate.weekday() == weekStartDay:
-                # calibrate display once a week to prevent ghosting
-                # displayService.calibrate(cycles=0)  # to calibrate in production
             displayService.update(calBlackImage, calRedImage)
             displayService.sleep()
 
@@ -104,10 +102,10 @@ def main():
         logger.error(e)
         
     finally:
-        # logger.info("Checking if configured to shutdown safely - Current hour: {}".format(currDatetime.hour))
-        # if isShutdownOnComplete:            
-        #     if abs(currDatetime.hour - updateTime) <= 2:
-        logger.info("Shutting down safely.")
+        logger.info("Entering shutdown flow")
+        while powerService.is_charging():
+            time.sleep(30)
+        logger.info("Device not charging — shutting down safely.")
         os.system("sudo shutdown -h now")
 
 # journalctl SYSLOG_IDENTIFIER=einkcal -r
