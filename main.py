@@ -38,6 +38,7 @@ def main():
     latitude = config['lat'] # latitude for open weather call
     longitude = config['long'] # longitude for open weather call
     apiKey = config['openweatherapi'] # api key for open weather clal
+    tempUnit = config['tempUnit'] # unit to use for temperature forcast
     updateTime = config['dailyUpdateTime'] # hour of day data is refreshed, this ensures device wont shut down during testing
 
     # Create and configure logger
@@ -79,7 +80,7 @@ def main():
         
         weatherService = WeatherHelper()
         start = dt.datetime.now()
-        weatherDict = weatherService.get_weather(latitude, longitude, apiKey)
+        weatherDict = weatherService.get_weather(latitude, longitude, apiKey, tempUnit)
         logger.info("Weather events retrieved in " + str(dt.datetime.now() - start))
 
         renderService = RenderHelper(imageWidth, imageHeight, rotateAngle)
