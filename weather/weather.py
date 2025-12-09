@@ -19,7 +19,7 @@ class WeatherHelper:
             total=3,
             status_forcelist=[500, 502, 503, 504],
             backoff_factor=2,
-            method_whitelist=False
+            allowed_methods=False
         )
 
     def get_weather(self, lat, lon, api_key):
