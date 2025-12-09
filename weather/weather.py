@@ -22,7 +22,7 @@ class WeatherHelper:
             allowed_methods=False
         )
 
-    def get_weather(self, lat, lon, api_key):
+    def get_weather(self, lat, lon, api_key, unit="metric"):
         url = "https://api.openweathermap.org/data/3.0/onecall?lat={0}&lon={1}&appid={2}&exclude=current,minutely,hourly,alerts&units=metric".format(
         lat, lon, api_key)
         session = requests.Session()
@@ -31,8 +31,8 @@ class WeatherHelper:
         data = json.loads(response.text)
         for forcast in data.get('daily'):
             if datetime.utcfromtimestamp(forcast.get('dt')).date() == datetime.today().date():
-                w = {'high': round(forcast.get('temp', {}).get('max') * 1.8 + 32),
-                     'low': round(forcast.get('temp', {}).get('min') * 1.8 + 32),
+                w = {'high': round(forecast.get('temp', {}).get('max')),
+                     'low': round(forcast.get('temp', {}).get('min')),
                      'pop': round(forcast.get('pop') * 100),
                      'id': forcast.get('weather', [{}])[0].get('id')}
                 return w
