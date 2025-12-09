@@ -49,7 +49,8 @@ class PowerHelper:
     def is_charging(self) -> bool:
         try:
             result_str = self.send_pisugar_cmd("get battery_power_plugged")
-            return result_str.lower() == "true"
+            parts = result_str.split()
+            return parts[-1].lower() == "true"
         except Exception as e:
             self.logger.info(f"Invalid status: {e}")
             return False
