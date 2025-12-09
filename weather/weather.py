@@ -23,16 +23,16 @@ class WeatherHelper:
         )
 
     def get_weather(self, lat, lon, api_key, unit="metric"):
-        url = "https://api.openweathermap.org/data/3.0/onecall?lat={0}&lon={1}&appid={2}&exclude=current,minutely,hourly,alerts&units=metric".format(
-        lat, lon, api_key)
+        url = "https://api.openweathermap.org/data/3.0/onecall?lat={0}&lon={1}&appid={2}&exclude=current,minutely,hourly,alerts&units={3}".format(
+        lat, lon, api_key, unit)
         session = requests.Session()
         session.mount("https://", requests.adapters.HTTPAdapter(max_retries=self.retry_strategy()))
         response = session.get(url)
         data = json.loads(response.text)
-        for forcast in data.get('daily'):
-            if datetime.utcfromtimestamp(forcast.get('dt')).date() == datetime.today().date():
+        for forecast in data.get('daily'):
+            if datetime.utcfromtimestamp(forecast.get('dt')).date() == datetime.today().date():
                 w = {'high': round(forecast.get('temp', {}).get('max')),
-                     'low': round(forcast.get('temp', {}).get('min')),
-                     'pop': round(forcast.get('pop') * 100),
-                     'id': forcast.get('weather', [{}])[0].get('id')}
+                     'low': round(forecast.get('temp', {}).get('min')),
+                     'pop': round(forecast.get('pop') * 100),
+                     'id': forecast.get('weather', [{}])[0].get('id')}
                 return w
