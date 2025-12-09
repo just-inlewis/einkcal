@@ -5,6 +5,7 @@ This script exposes the functions to interface with PiSugar. Mainly to retrieve 
 to trigger the syncing of the PiSugar
 """
 
+from pisugar import *
 import socket
 import logging
 
@@ -14,6 +15,8 @@ PORT = 8423
 class PowerHelper:
     def __init__(self):
         self.logger = logging.getLogger('einkcal')
+        conn, event_conn = connect_tcp("127.0.0.1", 8423)
+        self.pisugar = PiSugarServer(conn, event_conn)
 
     @staticmethod
     def send_pisugar_cmd(cmd: str, timeout: float = 2.0) -> str:
@@ -35,29 +38,41 @@ class PowerHelper:
         line = buf.split(b"\n", 1)[0]
         return line.decode("utf-8", errors="replace").strip()
 
+    def sync_time(self) -> None:
+        self.pisugar.rtc_web()
+
+    def set_auto_power_on(self) -> None:
+        self.pisugar.set_battery_auto_power_on(True)
+
     def get_battery(self) -> float:
-        try:
-            result_str = self.send_pisugar_cmd("get battery")
-            parts = result_str.split()
-            battery_str = parts[-1]
-            battery_float = float(battery_str)
-            return battery_float
-        except Exception as e:
-            self.logger.info(f"Invalid battery output: {e}")
-            return -1.0
+        return self.pisugar.get_battery_level()
 
     def is_charging(self) -> bool:
-        try:
-            result_str = self.send_pisugar_cmd("get battery_power_plugged")
-            parts = result_str.split()
-            return parts[-1].lower() == "true"
-        except Exception as e:
-            self.logger.info(f"Invalid status: {e}")
-            return False
+        return self.pisugar.get_battery_power_plugged()
 
-    def sync_time(self) -> None:
-        try:
-            resp = self.send_pisugar_cmd("rtc_pi2rtc", timeout=2.0)
-            self.logger.info(f"rtc_pi2rtc response: {resp}")
-        except (socket.timeout, OSError) as e:
-            self.logger.error(f"Time sync failed: {e!r}")
+    # def get_battery(self) -> float:
+    #     try:
+    #         result_str = self.send_pisugar_cmd("get battery")
+    #         parts = result_str.split()
+    #         battery_str = parts[-1]
+    #         battery_float = float(battery_str)
+    #         return battery_float
+    #     except Exception as e:
+    #         self.logger.info(f"Invalid battery output: {e}")
+    #         return -1.0
+
+    # def is_charging(self) -> bool:
+    #     try:
+    #         result_str = self.send_pisugar_cmd("get battery_power_plugged")
+    #         parts = result_str.split()
+    #         return parts[-1].lower() == "true"
+    #     except Exception as e:
+    #         self.logger.info(f"Invalid status: {e}")
+    #         return False
+
+    # def sync_time(self) -> None:
+    #     try:
+    #         resp = self.send_pisugar_cmd("rtc_pi2rtc", timeout=2.0)
+    #         self.logger.info(f"rtc_pi2rtc response: {resp}")
+    #     except (socket.timeout, OSError) as e:
+    #         self.logger.error(f"Time sync failed: {e!r}")
