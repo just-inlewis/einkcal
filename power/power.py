@@ -5,40 +5,58 @@ This script exposes the functions to interface with PiSugar. Mainly to retrieve 
 to trigger the syncing of the PiSugar
 """
 
-import subprocess
+import socket
 import logging
 
-class PowerHelper:
+HOST = "127.0.0.1"
+PORT = 8423
 
+class PowerHelper:
     def __init__(self):
         self.logger = logging.getLogger('einkcal')
 
-    def get_battery(self):
-        # start displaying on eink display
-        # command = ['echo "get battery" | nc -q 0 127.0.0.1 8423']
-        battery_float = -1
-        try:
-            ps = subprocess.Popen(('echo', 'get battery'), stdout=subprocess.PIPE)
-            result = subprocess.check_output(('nc', '-q', '0', '127.0.0.1', '8423'), stdin=ps.stdout)
-            ps.wait()
-            result_str = result.decode('utf-8').rstrip()
-            battery_level = result_str.split()[-1]
-            battery_float = float(battery_level)
-            #battery_level = "{:.3f}".format(battery_float)
-        except (ValueError, subprocess.CalledProcessError) as e:
-            self.logger.info('Invalid battery output')
-        return battery_float
+    @staticmethod
+    def send_pisugar_cmd(cmd: str, timeout: float = 2.0) -> str:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(timeout)
+            s.connect((HOST, PORT))
+            s.sendall((cmd + "\n").encode("utf-8"))
+            s.shutdown(socket.SHUT_WR)
 
-    def set_next_boot_datetime(self, datetime):
-        # TODO: For directly scheduling next boot instead of using PiSugar's web interface
-        # Currently, it can be done manually through the PiSugar web interface
-        return True
+            buf = b""
+            while True:
+                chunk = s.recv(1024)
+                if not chunk:
+                    break
+                buf += chunk
+                if b"\n" in buf:
+                    break
 
-    def sync_time(self):
-        # To sync PiSugar RTC with current time
+        line = buf.split(b"\n", 1)[0]
+        return line.decode("utf-8", errors="replace").strip()
+
+    def get_battery(self) -> float:
         try:
-            ps = subprocess.Popen(('echo', 'rtc_pi2rtc'), stdout=subprocess.PIPE)
-            result = subprocess.check_output(('nc', '-q', '0', '127.0.0.1', '8423'), stdin=ps.stdout)
-            ps.wait()
-        except subprocess.CalledProcessError:
-            self.logger.info('Invalid time sync command')
+            result_str = self.send_pisugar_cmd("get battery")
+            parts = result_str.split()
+            battery_str = parts[-1]
+            battery_float = float(battery_str)
+            return battery_float
+        except Exception as e:
+            self.logger.info(f"Invalid battery output: {e}")
+            return -1.0
+
+    def is_charging(self) -> bool:
+        try:
+            result_str = self.send_pisugar_cmd("get battery_power_plugged")
+            return result_str.lower() == "true"
+        except Exception as e:
+            self.logger.info(f"Invalid status: {e}")
+            return False
+
+    def sync_time(self) -> None:
+        try:
+            resp = self.send_pisugar_cmd("rtc_pi2rtc", timeout=2.0)
+            self.logger.info(f"rtc_pi2rtc response: {resp}")
+        except (socket.timeout, OSError) as e:
+            self.logger.error(f"Time sync failed: {e!r}")
