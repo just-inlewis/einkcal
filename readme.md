@@ -30,8 +30,9 @@
     ```
     If `wiringpi` fails, try:
     ```sh
-    wget https://project-downloads.drogon.net/wiringpi-latest.deb
-    sudo dpkg -i wiringpi-latest.deb
+    git clone https://github.com/WiringPi/WiringPi
+    cd WiringPi
+    ./build
     gpio -v
     ```
 
