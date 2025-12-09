@@ -17,7 +17,7 @@ class CalHelper:
             total=3,
             status_forcelist=[500, 502, 503, 504],
             backoff_factor=2,
-            method_whitelist=False
+            allowed_methods=False
         )
 
     def get_datetime(self, date, localTZ, offset=0):
