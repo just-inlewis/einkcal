@@ -7,7 +7,6 @@ from pytz import timezone
 import recurring_ical_events
 import datetime
 import logging
-import sys
 
 class CalHelper:
     def __init__(self):
@@ -46,18 +45,18 @@ class CalHelper:
             r = session.get(calendar, timeout=10)
             r.raise_for_status()
         except requests.RequestException as e:
-            self.logger.error(f"Error fetching calendar: {e}", file=sys.stderr)
+            self.logger.error(f"Error fetching calendar: {e}")
             return []
         try:
             cal = Calendar.from_ical(r.content)
         except Exception as e:
-            self.logger.error(f"Error parsing iCal data: {e}", file=sys.stderr)
+            self.logger.error(f"Error parsing iCal data: {e}")
             return []
         events = []
         try:
             occurrences = recurring_ical_events.of(cal).between(startDate, endDate)
         except Exception as e:
-            self.logger.error(f"Error expanding recurring events: {e}", file=sys.stderr)
+            self.logger.error(f"Error expanding recurring events: {e}")
             occurrences = cal.walk("VEVENT")
         for event in occurrences:
             status = str(event.get("STATUS", "CONFIRMED")).upper()
