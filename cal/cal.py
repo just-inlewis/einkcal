@@ -45,18 +45,18 @@ class CalHelper:
             r = session.get(calendar, timeout=10)
             r.raise_for_status()
         except requests.RequestException as e:
-            logger.error(f"Error fetching calendar: {e}", file=sys.stderr)
+            self.logger.error(f"Error fetching calendar: {e}", file=sys.stderr)
             return []
         try:
             cal = Calendar.from_ical(r.content)
         except Exception as e:
-            logger.error(f"Error parsing iCal data: {e}", file=sys.stderr)
+            self.logger.error(f"Error parsing iCal data: {e}", file=sys.stderr)
             return []
         events = []
         try:
             occurrences = recurring_ical_events.of(cal).between(startDate, endDate)
         except Exception as e:
-            logger.error(f"Error expanding recurring events: {e}", file=sys.stderr)
+            self.logger.error(f"Error expanding recurring events: {e}", file=sys.stderr)
             occurrences = cal.walk("VEVENT")
         for event in occurrences:
             status = str(event.get("STATUS", "CONFIRMED")).upper()
@@ -99,7 +99,6 @@ class CalHelper:
                     summary = str(summary_prop)
             else:
                 summary = ""
-
             events.append(
                 {
                     "allday": allDayEventS or allDayEventE,
@@ -109,5 +108,4 @@ class CalHelper:
                     "summary": summary,
                 }
             )
-
         return sorted(events, key=lambda x: x["startDatetime"])
