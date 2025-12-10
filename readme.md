@@ -101,9 +101,9 @@
 
     c) Set the correct permissions and reload systemd:
     ```sh
-    sudo chmod 644 /lib/systemd/system/einkcal.service
+    sudo chmod 644 /lib/systemd/system/wifi.service
     sudo systemctl daemon-reload
-    sudo systemctl enable einkcal.service
+    sudo systemctl enable wifi.service
     ```
 
 9. **Schedule wakeups:**
