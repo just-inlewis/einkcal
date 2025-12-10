@@ -4,6 +4,7 @@
 import requests
 from icalendar import Calendar
 from pytz import timezone
+import recurring_ical_events
 import datetime
 import logging
 
@@ -33,7 +34,6 @@ class CalHelper:
         return dt_obj, allDayEvent
 
     def is_multiday(self, start, end):
-        # check if event stretches across multiple days
         return start.date() != end.date()
 
     def retrieve_events(self, calendar, startDate, endDate, localTZ, thresholdHours):
@@ -45,25 +45,32 @@ class CalHelper:
             r = session.get(calendar, timeout=10)
             r.raise_for_status()
         except requests.RequestException as e:
-            print(f"Error fetching calendar: {e}", file=sys.stderr)
+            logger.error(f"Error fetching calendar: {e}", file=sys.stderr)
             return []
         try:
             cal = Calendar.from_ical(r.content)
         except Exception as e:
-            print(f"Error parsing iCal data: {e}", file=sys.stderr)
+            logger.error(f"Error parsing iCal data: {e}", file=sys.stderr)
             return []
         events = []
-        for event in cal.walk('VEVENT'):
-            print(event)
-            dtstart_prop = event.get('DTSTART')
+        try:
+            occurrences = recurring_ical_events.of(cal).between(startDate, endDate)
+        except Exception as e:
+            logger.error(f"Error expanding recurring events: {e}", file=sys.stderr)
+            occurrences = cal.walk("VEVENT")
+        for event in occurrences:
+            status = str(event.get("STATUS", "CONFIRMED")).upper()
+            if status == "CANCELLED":
+                continue
+            dtstart_prop = event.get("DTSTART")
             if dtstart_prop is None:
                 continue
             try:
                 dtstart = dtstart_prop.dt
             except Exception:
                 continue
-            dtend_prop = event.get('DTEND')
-            duration_prop = event.get('DURATION')
+            dtend_prop = event.get("DTEND")
+            duration_prop = event.get("DURATION")
             dtend = None
             if dtend_prop is not None:
                 try:
@@ -84,7 +91,7 @@ class CalHelper:
                 continue
             if end < startDate or start > endDate:
                 continue
-            summary_prop = event.get('SUMMARY')
+            summary_prop = event.get("SUMMARY")
             if summary_prop is not None:
                 try:
                     summary = summary_prop.to_ical().decode().strip()
@@ -92,11 +99,15 @@ class CalHelper:
                     summary = str(summary_prop)
             else:
                 summary = ""
-            events.append({
-                'allday': allDayEventS or allDayEventE,
-                'startDatetime': start,
-                'endDatetime': end,
-                'isMultiday': self.is_multiday(start, end),
-                'summary': summary,
-            })
-        return sorted(events, key=lambda x: x['startDatetime'])
+
+            events.append(
+                {
+                    "allday": allDayEventS or allDayEventE,
+                    "startDatetime": start,
+                    "endDatetime": end,
+                    "isMultiday": self.is_multiday(start, end),
+                    "summary": summary,
+                }
+            )
+
+        return sorted(events, key=lambda x: x["startDatetime"])
