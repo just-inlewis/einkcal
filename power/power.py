@@ -5,6 +5,7 @@ This script exposes the functions to interface with PiSugar. Mainly to retrieve 
 to trigger the syncing of the PiSugar
 """
 
+from pisugar import *
 import socket
 import logging
 
@@ -14,50 +15,14 @@ PORT = 8423
 class PowerHelper:
     def __init__(self):
         self.logger = logging.getLogger('einkcal')
-
-    @staticmethod
-    def send_pisugar_cmd(cmd: str, timeout: float = 2.0) -> str:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(timeout)
-            s.connect((HOST, PORT))
-            s.sendall((cmd + "\n").encode("utf-8"))
-            s.shutdown(socket.SHUT_WR)
-
-            buf = b""
-            while True:
-                chunk = s.recv(1024)
-                if not chunk:
-                    break
-                buf += chunk
-                if b"\n" in buf:
-                    break
-
-        line = buf.split(b"\n", 1)[0]
-        return line.decode("utf-8", errors="replace").strip()
-
-    def get_battery(self) -> float:
-        try:
-            result_str = self.send_pisugar_cmd("get battery")
-            parts = result_str.split()
-            battery_str = parts[-1]
-            battery_float = float(battery_str)
-            return battery_float
-        except Exception as e:
-            self.logger.info(f"Invalid battery output: {e}")
-            return -1.0
-
-    def is_charging(self) -> bool:
-        try:
-            result_str = self.send_pisugar_cmd("get battery_power_plugged")
-            parts = result_str.split()
-            return parts[-1].lower() == "true"
-        except Exception as e:
-            self.logger.info(f"Invalid status: {e}")
-            return False
+        conn, event_conn = connect_tcp("127.0.0.1", 8423)
+        self.pisugar = PiSugarServer(conn, event_conn)
 
     def sync_time(self) -> None:
-        try:
-            resp = self.send_pisugar_cmd("rtc_pi2rtc", timeout=2.0)
-            self.logger.info(f"rtc_pi2rtc response: {resp}")
-        except (socket.timeout, OSError) as e:
-            self.logger.error(f"Time sync failed: {e!r}")
+        self.pisugar.rtc_web()
+
+    def get_battery(self) -> float:
+        return self.pisugar.get_battery_level()
+
+    def is_charging(self) -> bool:
+        return self.pisugar.get_battery_power_plugged()
