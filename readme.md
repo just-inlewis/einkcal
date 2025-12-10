@@ -26,6 +26,9 @@
     sudo apt-get install python3-icalendar
     sudo apt-get install python3-recurring-ical-events
     sudo apt-get install python3-flask
+
+    sudo apt-get install python3-rpi-lgpio # (Zero 2+)
+    sudo apt-get install python3-rpi.gpio
     
     sudo python3 -m pip install --break-system-packages pisugar
     ```
