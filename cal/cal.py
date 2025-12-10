@@ -7,6 +7,7 @@ from pytz import timezone
 import recurring_ical_events
 import datetime
 import logging
+import sys
 
 class CalHelper:
     def __init__(self):
