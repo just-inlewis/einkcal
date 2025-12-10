@@ -20,14 +20,14 @@
     ```sh
     sudo apt-get update
     sudo apt-get install git
-    sudo apt-get install python3-pip
-    sudo apt-get install wiringpi
     sudo apt-get install wkhtmltopdf
-    pip3 install RPi.GPIO
-    pip3 install spidev
-    pip3 install pytz
-    pip3 install Pillow
-    pip3 install icalendar
+    sudo apt-get install python3-pip
+    sudo apt-get install python3-tz
+    sudo apt-get install python3-icalendar
+    sudo apt-get install python3-recurring-ical-events
+    sudo apt-get install python3-flask
+    
+    sudo python3 -m pip install --break-system-packages pisugar
     ```
     If `wiringpi` fails, try:
     ```sh
