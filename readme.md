@@ -85,7 +85,7 @@
     b) Add the following service details:
     ```ini
     [Unit]
-    Description=WiFi Startup Script
+    Description=einkcal config
     After=network.target
     
     [Service]
