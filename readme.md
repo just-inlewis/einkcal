@@ -56,9 +56,9 @@
     
     [Service]
     Type=idle
-    User=pi
-    WorkingDirectory=/home/pi/einkcal/
-    ExecStart=/usr/bin/python3 /home/pi/einkcal/main.py
+    User=calendar
+    WorkingDirectory=/home/calendar/einkcal/
+    ExecStart=/usr/bin/python3 /home/calendar/einkcal/main.py
     StandardOutput=syslog
     StandardError=syslog
     SyslogIdentifier=einkcal
