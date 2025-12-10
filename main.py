@@ -18,7 +18,7 @@ import time
 
 def main():
     # Basic configuration settings (user replaceable)
-    configFile = open('../config.json')
+    configFile = open('config.json')
     config = json.load(configFile)
 
     displayTZ = timezone(config['displayTZ']) # list of timezones - print(pytz.all_timezones)
