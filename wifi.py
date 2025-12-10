@@ -1,8 +1,8 @@
-# sudo apt install -y python3 python3-flask
-
 #!/usr/bin/env python3
 from flask import Flask, request, jsonify, send_from_directory
 from pathlib import Path
+from pisugar import connect_tcp, PiSugarServer
+from datetime import datetime, timedelta
 import json
 import subprocess
 import threading
@@ -18,10 +18,21 @@ PING_INTERVAL = 60           # seconds between connectivity checks
 BOOT_GRACE = 20              # wait after boot before first AP decision
 WIFI_RETRY_WAIT = 20         # wait after turning AP off to let Wi-Fi client come up
 AP_SSID = "Calendar Setup"
+PISUGAR_SOCKET = "/tmp/pisugar-server.sock"
+PISUGAR_ALARM_REPEAT = 127  # 1111111 in binary: every day
 
 # ---- Flask setup ----
 
 app = Flask(__name__, static_folder=SCRIPT_DIR, static_url_path="")
+
+# ---- PiSugar setup ----
+try:
+    conn, event_conn = connect_tcp("127.0.0.1", 8423)
+    pisugar = PiSugarServer(conn, event_conn)
+    print("[device] Connected to PiSugar server on 127.0.0.1:8423")
+except Exception as e:
+    pisugar = None
+    print("[device] Failed to connect to PiSugar server:", e)
 
 # ---- small helpers ----
 
@@ -150,6 +161,22 @@ def stop_ap():
     print(f"[device] waiting {WIFI_RETRY_WAIT} s for wifi client to come up")
     time.sleep(WIFI_RETRY_WAIT)
 
+
+def schedule_wakeup_24h(hour: int, minute: int):
+    if pisugar is None:
+        raise RuntimeError("PiSugar server not connected")
+    now = datetime.now().astimezone()
+    target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if target <= now:
+        target += timedelta(days=1)
+    repeat_mask = 127  # every day
+    print(f"[device] Scheduling wake-up at {target.isoformat()} repeat={repeat_mask}")
+    pisugar.set_battery_auto_power_on(False)
+    pisugar.rtc_alarm_set(target, repeat_mask)
+    pisugar.set_battery_auto_power_on(True)
+    return target
+
+
 # ---- Flask routes ----
 
 @app.route("/")
@@ -241,6 +268,82 @@ def update_software():
         "message": msg
     })
 
+@app.route("/api/wakeup", methods=["POST"])
+def api_wakeup():
+    payload = request.get_json(force=True) or {}
+    try:
+        hour = int(payload.get("hour", -1))
+        minute = int(payload.get("minute", -1))
+    except Exception:
+        return jsonify({"status": "error", "message": "Invalid hour/minute"}), 400
+
+    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+        return jsonify({
+            "status": "error",
+            "message": "Hour must be 0–23 and minute 0–59"
+        }), 400
+
+    try:
+        next_alarm = schedule_wakeup_24h(hour, minute)
+    except Exception as e:
+        print("[device] wakeup error:", e)
+        return jsonify({"status": "error", "message": f"PiSugar error: {e}"}), 500
+
+    # Convert back to 12-hour format for friendly message
+    hour12 = ((hour + 11) % 12) + 1
+    ampm = "AM" if hour < 12 else "PM"
+    friendly = f"{hour12:02d}:{minute:02d} {ampm}"
+
+    return jsonify({
+        "status": "ok",
+        "message": f"Wake up scheduled for {friendly}."
+    })
+
+@app.route("/api/battery", methods=["GET"])
+def api_battery():
+    """
+    Return basic battery status for the UI.
+
+    {
+      "level": 83.5,
+      "charging": true,
+      "plugged": true,
+      "model": "PiSugar 3",
+      "temperature": 31.2
+    }
+    """
+    # If PiSugar isn’t connected, fail gracefully
+    if pisugar is None:
+        return jsonify({
+            "status": "error",
+            "message": "PiSugar not connected"
+        }), 503
+
+    try:
+        level = pisugar.get_battery_level()             # %
+        charging = pisugar.get_battery_charging()       # bool
+        plugged = pisugar.get_battery_power_plugged()   # bool
+        model = pisugar.get_model()                     # string
+        try:
+            temp = pisugar.get_temperature()
+        except Exception:
+            temp = None
+
+        return jsonify({
+            "status": "ok",
+            "level": level,
+            "charging": charging,
+            "plugged": plugged,
+            "model": model,
+            "temperature": temp
+        })
+    except Exception as e:
+        print("[device] api_battery error:", e)
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
 # ---- Connectivity loop ----
 
 def connectivity_loop():
@@ -283,17 +386,14 @@ def connectivity_loop():
 
         time.sleep(PING_INTERVAL)
 
-
 def run_flask():
     # no debug/reloader under systemd
     app.run(host="0.0.0.0", port=80, debug=False, use_reloader=False)
-
 
 def main():
     t = threading.Thread(target=run_flask, daemon=True)
     t.start()
     connectivity_loop()
-
 
 if __name__ == "__main__":
     main()
