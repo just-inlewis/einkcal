@@ -206,11 +206,17 @@ def update_software():
     Assumes this directory is the root of the git repo.
     """
     try:
+        # 1) Ensure this repo is marked safe for the user running the service
+        subprocess.run(
+            ["sudo", "git", "config", "--global", "--add", "safe.directory", str(SCRIPT_DIR)],
+            capture_output=True,
+            text=True
+        )
+        # 2) Run git pull with no timeout
         result = subprocess.run(
             ["git", "-C", str(SCRIPT_DIR), "pull"],
             capture_output=True,
-            text=True,
-            timeout=300,
+            text=True
         )
     except Exception as e:
         print("[device] update_software error:", e)
