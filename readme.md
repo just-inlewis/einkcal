@@ -12,7 +12,8 @@
 
 4. **Install PiSugar:**
     ```sh
-    curl http://cdn.pisugar.com/release/pisugar-power-manager.sh | sudo bash
+    wget https://cdn.pisugar.com/release/pisugar-power-manager.sh
+    bash pisugar-power-manager.sh -c release
     ```
 
 5. **Install Python3 and Dependencies:**
