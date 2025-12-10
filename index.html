@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Setup</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { margin-bottom: 1rem; }
+    fieldset { margin-bottom: 1.5rem; padding: 1rem; }
+    legend { font-weight: bold; }
+    label { display: block; margin: 0.4rem 0 0.1rem; }
+    input, select, textarea, button {
+      width: 100%; padding: 0.4rem; box-sizing: border-box; margin-bottom: 0.5rem;
+    }
+    .row { display: flex; gap: 0.5rem; }
+    .row > * { flex: 1; }
+    .message { margin-top: 0.3rem; min-height: 1.2em; font-size: 0.9rem; }
+    .config-link {
+      display: inline-block;
+      padding: 0.4rem;
+      border: 1px solid #999;
+      border-radius: 4px;
+      background: #f4f4f4;
+      text-decoration: none;
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 0.5rem;
+      text-align: center;
+      font-weight: bold;
+      color: #000;
+    }
+    .config-link:hover {
+      background: #e6e6e6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Setup</h1>
+
+  <fieldset>
+    <legend>Wi-Fi</legend>
+    <div class="row">
+      <div>
+        <label for="ssid">Network (SSID)</label>
+        <select id="ssid"></select>
+      </div>
+      <div>
+        <label for="password">Password</label>
+        <input type="password" id="password" />
+      </div>
+    </div>
+    <button id="wifi-save">Save Wi-Fi</button>
+    <div class="message" id="wifi-msg"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Calendar Config</legend>
+    <textarea id="config-text" rows="12"></textarea>
+    <button id="config-save">Save Config</button>
+    <div class="message" id="config-msg"></div>
+  </fieldset>
+  <fieldset>
+    <legend>Advanced Config</legend>
+    <a id="pi-sugar-config" class="config-link" href="#" target="_blank">
+      Open Pi Sugar Config
+    </a>
+  </fieldset>
+
+  <script>
+    async function loadNetworks() {
+      try {
+        const res = await fetch('/api/wifi/networks');
+        const networks = await res.json();
+        const select = document.getElementById('ssid');
+        select.innerHTML = '';
+        networks.forEach(n => {
+          const opt = document.createElement('option');
+          opt.value = n.ssid;
+          opt.textContent = n.ssid || '(hidden)';
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const cfg = await res.json();
+        document.getElementById('config-text').value = JSON.stringify(cfg, null, 2);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    document.getElementById('wifi-save').addEventListener('click', async () => {
+      const ssid = document.getElementById('ssid').value;
+      const password = document.getElementById('password').value;
+      const msg = document.getElementById('wifi-msg');
+      msg.textContent = 'Connecting...';
+
+      try {
+        const res = await fetch('/api/wifi/set', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ ssid, password })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || data.status === 'error') {
+          msg.textContent = (data.message || 'failed to set Wi-Fi');
+        } else {
+          msg.textContent = data.message || 'Wi-Fi saved.';
+        }
+      } catch (e) {
+        msg.textContent = 'Error talking to device';
+      }
+    });
+
+    document.getElementById('config-save').addEventListener('click', async () => {
+      const msg = document.getElementById('config-msg');
+      msg.textContent = 'Saving config...';
+      let obj;
+      try {
+        obj = JSON.parse(document.getElementById('config-text').value);
+      } catch (e) {
+        msg.textContent = 'Invalid JSON: ' + e.message;
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(obj)
+        });
+        if (res.ok) {
+          msg.textContent = 'Config saved.';
+        } else {
+          msg.textContent = 'Error saving config.';
+        }
+      } catch (e) {
+        msg.textContent = 'Error talking to device';
+      }
+    });
+
+    function piSugarConfig() {
+      const link = document.getElementById('pi-sugar-config');
+      const url = new URL(window.location.href);
+      url.port = '8421';
+      link.href = url.toString();
+    }
+
+    loadNetworks();
+    loadConfig();
+    piSugarConfig();
+  </script>
+</body>
+</html>
