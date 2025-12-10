@@ -109,6 +109,7 @@
 
 9. **Schedule wakeups:**
     ```sh
+    http://calendar.local
     http://x.x.x.x:8421
     ```
     Set Schedule Wake Up to 00:30 and Safe Shutdown to <= 10%
