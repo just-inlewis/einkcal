@@ -8,7 +8,6 @@ import datetime
 import logging
 
 class CalHelper:
-
     def __init__(self):
         self.logger = logging.getLogger('einkcal')
 
@@ -17,17 +16,21 @@ class CalHelper:
             total=3,
             status_forcelist=[500, 502, 503, 504],
             backoff_factor=2,
-            allowed_methods=False
+            allowed_methods=None,
         )
 
     def get_datetime(self, date, localTZ, offset=0):
         allDayEvent = False
-        try:
-            formattedDate = date.astimezone(localTZ)
-        except:
+        if isinstance(date, datetime.date) and not isinstance(date, datetime.datetime):
             allDayEvent = True
-            formattedDate = (datetime.datetime(date.year, date.month, date.day) + datetime.timedelta(days=offset)).astimezone(localTZ)
-        return formattedDate, allDayEvent
+            dt_obj = datetime.datetime(date.year, date.month, date.day) + datetime.timedelta(days=offset)
+            dt_obj = localTZ.localize(dt_obj)
+        else:
+            if date.tzinfo is None:
+                dt_obj = localTZ.localize(date)
+            else:
+                dt_obj = date.astimezone(localTZ)
+        return dt_obj, allDayEvent
 
     def is_multiday(self, start, end):
         # check if event stretches across multiple days
@@ -35,26 +38,65 @@ class CalHelper:
 
     def retrieve_events(self, calendar, startDate, endDate, localTZ, thresholdHours):
         session = requests.Session()
-        session.mount("https://", requests.adapters.HTTPAdapter(max_retries=self.retry_strategy()))
-        r = session.get(calendar)
-        cal = Calendar.from_ical(r.text)
+        adapter = requests.adapters.HTTPAdapter(max_retries=self.retry_strategy())
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        try:
+            r = session.get(calendar, timeout=10)
+            r.raise_for_status()
+        except requests.RequestException as e:
+            print(f"Error fetching calendar: {e}", file=sys.stderr)
+            return []
+        try:
+            cal = Calendar.from_ical(r.content)
+        except Exception as e:
+            print(f"Error parsing iCal data: {e}", file=sys.stderr)
+            return []
         events = []
         for event in cal.walk('VEVENT'):
-            allDayEvent = False
-            dtstart = event.get('DTSTART').dt
-            dtend = event.get('DTEND').dt
-            start, allDayEventS = self.get_datetime(dtstart, localTZ)
-            # All day events are erroneously maked as 1 day longer than they actually are.
-            end, allDayEventE = self.get_datetime(dtend, localTZ, offset=-1)
-            if (startDate > end or endDate < end):
+            print(event)
+            dtstart_prop = event.get('DTSTART')
+            if dtstart_prop is None:
                 continue
-
+            try:
+                dtstart = dtstart_prop.dt
+            except Exception:
+                continue
+            dtend_prop = event.get('DTEND')
+            duration_prop = event.get('DURATION')
+            dtend = None
+            if dtend_prop is not None:
+                try:
+                    dtend = dtend_prop.dt
+                except Exception:
+                    dtend = None
+            if dtend is None and duration_prop is not None:
+                try:
+                    dtend = dtstart + duration_prop.dt
+                except Exception:
+                    dtend = None
+            if dtend is None:
+                dtend = dtstart
+            try:
+                start, allDayEventS = self.get_datetime(dtstart, localTZ)
+                end, allDayEventE = self.get_datetime(dtend, localTZ, offset=-1)
+            except Exception:
+                continue
+            if end < startDate or start > endDate:
+                continue
+            summary_prop = event.get('SUMMARY')
+            if summary_prop is not None:
+                try:
+                    summary = summary_prop.to_ical().decode().strip()
+                except Exception:
+                    summary = str(summary_prop)
+            else:
+                summary = ""
             events.append({
-            'allday': allDayEventS or allDayEventE,
-            'startDatetime': start,
-            'endDatetime': end,
-            'isMultiday': self.is_multiday(start, end),
-            'summary': event.get('SUMMARY').to_ical().decode().strip()
+                'allday': allDayEventS or allDayEventE,
+                'startDatetime': start,
+                'endDatetime': end,
+                'isMultiday': self.is_multiday(start, end),
+                'summary': summary,
             })
-
         return sorted(events, key=lambda x: x['startDatetime'])
