@@ -199,6 +199,41 @@ def set_wifi():
         }), 500
     return jsonify({"status": "ok", "message": "Wi-Fi connected successfully."})
 
+@app.route("/api/update", methods=["POST"])
+def update_software():
+    """
+    Run `git pull` in the directory where this script lives.
+    Assumes this directory is the root of the git repo.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(SCRIPT_DIR), "pull"],
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+    except Exception as e:
+        print("[device] update_software error:", e)
+        return jsonify({
+            "status": "error",
+            "message": f"Update failed: {e}"
+        }), 500
+
+    if result.returncode != 0:
+        print("[device] git pull stderr:", result.stderr)
+        return jsonify({
+            "status": "error",
+            "message": (result.stderr or "git pull failed").strip()
+        }), 500
+
+    stdout = (result.stdout or "").strip()
+    msg = stdout if stdout else "Already up to date."
+    print("[device] git pull stdout:", stdout)
+
+    return jsonify({
+        "status": "ok",
+        "message": msg
+    })
 
 # ---- Connectivity loop ----
 
