@@ -64,6 +64,10 @@
     <a id="pi-sugar-config" class="config-link" href="#" target="_blank">
       Open Pi Sugar Config
     </a>
+    <a id="update-software" class="config-link" href="javascript:void(0);">
+      Update Calendar Software
+    </a>
+    <div class="message" id="update-msg" style="margin-top: 0.3rem;"></div>
   </fieldset>
 
   <script>
@@ -142,6 +146,29 @@
           msg.textContent = 'Error saving config.';
         }
       } catch (e) {
+        msg.textContent = 'Error talking to device';
+      }
+    });
+
+    document.getElementById('update-software').addEventListener('click', async () => {
+      const msg = document.getElementById('update-msg');
+      msg.textContent = 'Updating from git...';
+
+      try {
+        const res = await fetch('/api/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || data.status === 'error') {
+          msg.textContent = data.message || 'Update failed.';
+        } else {
+          msg.textContent = data.message || 'Update complete.';
+        }
+      } catch (e) {
+        console.error(e);
         msg.textContent = 'Error talking to device';
       }
     });
