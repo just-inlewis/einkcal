@@ -12,9 +12,22 @@
     input, select, textarea, button {
       width: 100%; padding: 0.4rem; box-sizing: border-box; margin-bottom: 0.5rem;
     }
-    .row { display: flex; gap: 0.5rem; }
-    .row > * { flex: 1; }
-    .message { margin-top: 0.3rem; min-height: 1.2em; font-size: 0.9rem; }
+
+    .row { 
+      display: flex; 
+      gap: 0.5rem; 
+    }
+
+    .row > * { 
+      flex: 1; 
+    }
+
+    .message { 
+      margin-top: 0.3rem; 
+      min-height: 1.2em; 
+      font-size: 0.9rem; 
+    }
+
     .config-link {
       display: inline-block;
       padding: 0.4rem;
@@ -29,14 +42,117 @@
       font-weight: bold;
       color: #000;
     }
+
     .config-link:hover {
       background: #e6e6e6;
+    }
+    
+    .status-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .battery-card {
+      flex: 1;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      background: linear-gradient(135deg, #f9fafb, #f0f4ff);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .battery-main {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .battery-icon {
+      position: relative;
+      width: 38px;
+      height: 18px;
+      border-radius: 4px;
+      border: 2px solid #444;
+      box-sizing: border-box;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .battery-tip {
+      position: absolute;
+      right: -4px;
+      top: 5px;
+      width: 4px;
+      height: 8px;
+      border-radius: 2px;
+      background: #444;
+    }
+
+    .battery-fill {
+      height: 100%;
+      width: 0%;
+      background: #22c55e; /* default; JS will adjust via class */
+      transition: width 0.3s ease, background 0.3s ease;
+    }
+
+    .battery-fill.low {
+      background: #ef4444;
+    }
+
+    .battery-fill.medium {
+      background: #eab308;
+    }
+
+    .battery-fill.high {
+      background: #22c55e;
+    }
+
+    .battery-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .battery-percent {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .battery-status {
+      font-size: 0.85rem;
+      color: #555;
+    }
+
+    .battery-extra {
+      font-size: 0.8rem;
+      color: #777;
+      text-align: right;
     }
   </style>
 </head>
 <body>
-  <h1>Setup</h1>
-
+  <h1>E-Ink Calendar</h1>
+  <div class="status-row">
+    <div class="battery-card">
+      <div class="battery-main">
+        <div class="battery-icon">
+          <div id="battery-fill" class="battery-fill"></div>
+          <div class="battery-tip"></div>
+        </div>
+        <div class="battery-text">
+          <div id="battery-percent" class="battery-percent">--%</div>
+          <div id="battery-status" class="battery-status">Battery status…</div>
+        </div>
+      </div>
+      <div class="battery-extra" id="battery-extra">
+        &nbsp;
+      </div>
+    </div>
+  </div>
   <fieldset>
     <legend>Wi-Fi</legend>
     <div class="row">
@@ -52,7 +168,103 @@
     <button id="wifi-save">Save Wi-Fi</button>
     <div class="message" id="wifi-msg"></div>
   </fieldset>
-
+  <fieldset>
+    <legend>Update Time</legend>
+    <div class="row">
+      <div>
+        <label for="wake-hour">Hour</label>
+        <select id="wake-hour">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+        </select>
+      </div>
+      <div>
+        <label for="wake-minute">Minute</label>
+        <select id="wake-minute">
+          <!-- full minute range; trim if you want 5-minute steps instead -->
+          <option value="0">00</option>
+          <option value="1">01</option>
+          <option value="2">02</option>
+          <option value="3">03</option>
+          <option value="4">04</option>
+          <option value="5">05</option>
+          <option value="6">06</option>
+          <option value="7">07</option>
+          <option value="8">08</option>
+          <option value="9">09</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+          <option value="13">13</option>
+          <option value="14">14</option>
+          <option value="15">15</option>
+          <option value="16">16</option>
+          <option value="17">17</option>
+          <option value="18">18</option>
+          <option value="19">19</option>
+          <option value="20">20</option>
+          <option value="21">21</option>
+          <option value="22">22</option>
+          <option value="23">23</option>
+          <option value="24">24</option>
+          <option value="25">25</option>
+          <option value="26">26</option>
+          <option value="27">27</option>
+          <option value="28">28</option>
+          <option value="29">29</option>
+          <option value="30">30</option>
+          <option value="31">31</option>
+          <option value="32">32</option>
+          <option value="33">33</option>
+          <option value="34">34</option>
+          <option value="35">35</option>
+          <option value="36">36</option>
+          <option value="37">37</option>
+          <option value="38">38</option>
+          <option value="39">39</option>
+          <option value="40">40</option>
+          <option value="41">41</option>
+          <option value="42">42</option>
+          <option value="43">43</option>
+          <option value="44">44</option>
+          <option value="45">45</option>
+          <option value="46">46</option>
+          <option value="47">47</option>
+          <option value="48">48</option>
+          <option value="49">49</option>
+          <option value="50">50</option>
+          <option value="51">51</option>
+          <option value="52">52</option>
+          <option value="53">53</option>
+          <option value="54">54</option>
+          <option value="55">55</option>
+          <option value="56">56</option>
+          <option value="57">57</option>
+          <option value="58">58</option>
+          <option value="59">59</option>
+        </select>
+      </div>
+      <div>
+        <label for="wake-ampm">AM / PM</label>
+        <select id="wake-ampm">
+          <option value="AM">AM</option>
+          <option value="PM">PM</option>
+        </select>
+      </div>
+    </div>
+    <button id="wake-save">Schedule Wake Up</button>
+    <div class="message" id="wake-msg"></div>
+  </fieldset>
   <fieldset>
     <legend>Calendar Config</legend>
     <textarea id="config-text" rows="12"></textarea>
@@ -61,9 +273,6 @@
   </fieldset>
   <fieldset>
     <legend>Advanced Config</legend>
-    <a id="pi-sugar-config" class="config-link" href="#" target="_blank">
-      Open Pi Sugar Config
-    </a>
     <a id="update-software" class="config-link" href="javascript:void(0);">
       Update Calendar Software
     </a>
@@ -123,6 +332,45 @@
       }
     });
 
+    document.getElementById('wake-save').addEventListener('click', async () => {
+      const msg = document.getElementById('wake-msg');
+      msg.textContent = 'Scheduling wake up...';
+
+      const hour12 = parseInt(document.getElementById('wake-hour').value, 10);
+      const minute = parseInt(document.getElementById('wake-minute').value, 10);
+      const ampm = document.getElementById('wake-ampm').value;
+
+      if (Number.isNaN(hour12) || Number.isNaN(minute)) {
+        msg.textContent = 'Invalid time.';
+        return;
+      }
+
+      // 12h -> 24h conversion
+      let hour = hour12 % 12; // 12 -> 0
+      if (ampm === 'PM') {
+        hour += 12;
+      }
+
+      try {
+        const res = await fetch('/api/wakeup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hour, minute })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || data.status === 'error') {
+          msg.textContent = data.message || 'Failed to schedule wake up.';
+        } else {
+          msg.textContent = data.message || 'Wake up scheduled.';
+        }
+      } catch (e) {
+        console.error(e);
+        msg.textContent = 'Error talking to device';
+      }
+    });
+
     document.getElementById('config-save').addEventListener('click', async () => {
       const msg = document.getElementById('config-msg');
       msg.textContent = 'Saving config...';
@@ -173,16 +421,76 @@
       }
     });
 
-    function piSugarConfig() {
-      const link = document.getElementById('pi-sugar-config');
-      const url = new URL(window.location.href);
-      url.port = '8421';
-      link.href = url.toString();
+    async function refreshBattery() {
+      const percentEl = document.getElementById('battery-percent');
+      const statusEl = document.getElementById('battery-status');
+      const extraEl = document.getElementById('battery-extra');
+      const fillEl = document.getElementById('battery-fill');
+
+      if (!percentEl || !statusEl || !fillEl) return;
+
+      try {
+        const res = await fetch('/api/battery');
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+        const data = await res.json();
+
+        const level = data.level ?? null;
+        const charging = !!data.charging;
+        const plugged = !!data.plugged;
+        const model = data.model || '';
+        const temp = data.temperature;
+
+        if (level === null || Number.isNaN(level)) {
+          percentEl.textContent = '--%';
+          statusEl.textContent = 'Battery status unavailable';
+          fillEl.style.width = '0%';
+          fillEl.className = 'battery-fill';
+          extraEl.textContent = model ? model : '';
+          return;
+        }
+
+        const clamped = Math.max(0, Math.min(100, level));
+        percentEl.textContent = clamped.toFixed(0) + '%';
+        fillEl.style.width = clamped + '%';
+
+        // Color band
+        let band = 'high';
+        if (clamped <= 20) band = 'low';
+        else if (clamped <= 60) band = 'medium';
+        fillEl.className = 'battery-fill ' + band;
+
+        // Status text
+        let statusText = '';
+        if (charging && plugged) {
+          statusText = 'Charging ⚡';
+        } else if (plugged && !charging) {
+          statusText = 'Plugged in';
+        } else {
+          statusText = 'On battery';
+        }
+        statusEl.textContent = statusText;
+
+        // Extra info: model + temp if available
+        const bits = [];
+        if (model) bits.push(model);
+        if (typeof temp === 'number') bits.push(temp.toFixed(1) + '°C');
+          extraEl.textContent = bits.join(' • ') || '\u00A0';
+      } catch (e) {
+        console.error('battery error', e);
+        percentEl.textContent = '--%';
+        statusEl.textContent = 'Battery status error';
+        fillEl.style.width = '0%';
+        fillEl.className = 'battery-fill';
+        extraEl.textContent = '\u00A0';
+      }
     }
 
     loadNetworks();
     loadConfig();
-    piSugarConfig();
+    refreshBattery();
+    setInterval(refreshBattery, 15000); // update every 15s
   </script>
 </body>
 </html>
