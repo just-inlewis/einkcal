@@ -166,6 +166,7 @@
       </div>
     </div>
     <button id="wifi-save">Save Wi-Fi</button>
+    <div class="message" id="wifi-status"></div>
     <div class="message" id="wifi-msg"></div>
   </fieldset>
   <fieldset>
@@ -281,19 +282,67 @@
 
   <script>
     async function loadNetworks() {
+      const select = document.getElementById('ssid');
+      const statusEl = document.getElementById('wifi-status');
+
       try {
-        const res = await fetch('/api/wifi/networks');
-        const networks = await res.json();
-        const select = document.getElementById('ssid');
+        const [netsRes, currentRes] = await Promise.all([
+          fetch('/api/wifi/networks'),
+          fetch('/api/wifi/current').catch(() => null)
+        ]);
+
+        const networks = await netsRes.json();
+        let currentSsid = null;
+
+        if (currentRes && currentRes.ok) {
+          const currentData = await currentRes.json();
+          currentSsid = currentData.ssid || null;
+        }
+
         select.innerHTML = '';
+
+        const seen = new Set();
         networks.forEach(n => {
+          if (!n.ssid || seen.has(n.ssid)) return;
+          seen.add(n.ssid);
           const opt = document.createElement('option');
           opt.value = n.ssid;
-          opt.textContent = n.ssid || '(hidden)';
+          if (n.ssid === currentSsid) {
+            opt.textContent = `${n.ssid} (Connected)`;
+          } else {
+            opt.textContent = n.ssid || '(hidden)';
+          }
           select.appendChild(opt);
         });
+
+        if (currentSsid && !seen.has(currentSsid)) {
+          const opt = document.createElement('option');
+          opt.value = currentSsid;
+          opt.textContent = `${currentSsid} (Connected)`;
+          select.insertBefore(opt, select.firstChild);
+        }
+
+        if (currentSsid) {
+          for (const opt of select.options) {
+            if (opt.value === currentSsid) {
+              select.value = currentSsid;
+              break;
+            }
+          }
+        }
+
+        if (statusEl) {
+          if (currentSsid) {
+            statusEl.textContent = `Current Wi-Fi: ${currentSsid}`;
+          } else {
+            statusEl.textContent = 'Not currently connected to Wi-Fi.';
+          }
+        }
       } catch (e) {
         console.error(e);
+        if (statusEl) {
+          statusEl.textContent = 'Wi-Fi status unavailable.';
+        }
       }
     }
 
@@ -307,27 +356,136 @@
       }
     }
 
+    async function refreshBattery() {
+      const percentEl = document.getElementById('battery-percent');
+      const statusEl = document.getElementById('battery-status');
+      const extraEl = document.getElementById('battery-extra');
+      const fillEl = document.getElementById('battery-fill');
+
+      if (!percentEl || !statusEl || !fillEl) return;
+
+      try {
+        const res = await fetch('/api/battery');
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+        const data = await res.json();
+
+        const level = data.level ?? null;
+        const charging = !!data.charging;
+        const plugged = !!data.plugged;
+        const model = data.model || '';
+        const temp = data.temperature;
+
+        if (level === null || Number.isNaN(level)) {
+          percentEl.textContent = '--%';
+          statusEl.textContent = 'Battery status unavailable';
+          fillEl.style.width = '0%';
+          fillEl.className = 'battery-fill';
+          extraEl.textContent = model ? model : '';
+          return;
+        }
+
+        const clamped = Math.max(0, Math.min(100, level));
+        percentEl.textContent = clamped.toFixed(0) + '%';
+        fillEl.style.width = clamped + '%';
+
+        // Color band
+        let band = 'high';
+        if (clamped <= 20) band = 'low';
+        else if (clamped <= 60) band = 'medium';
+        fillEl.className = 'battery-fill ' + band;
+
+        // Status text
+        let statusText = '';
+        if (charging && plugged) {
+          statusText = 'Charging ⚡';
+        } else if (plugged && !charging) {
+          statusText = 'Plugged in';
+        } else {
+          statusText = 'On battery';
+        }
+        statusEl.textContent = statusText;
+
+        // Extra info: model + temp if available
+        const bits = [];
+        if (model) bits.push(model);
+        if (typeof temp === 'number') bits.push(temp.toFixed(1) + '°C');
+          extraEl.textContent = bits.join(' • ') || '\u00A0';
+      } catch (e) {
+        console.error('battery error', e);
+        percentEl.textContent = '--%';
+        statusEl.textContent = 'Battery status error';
+        fillEl.style.width = '0%';
+        fillEl.className = 'battery-fill';
+        extraEl.textContent = '\u00A0';
+      }
+    }
+
+    async function loadWakeTime() {
+      const hourSel = document.getElementById('wake-hour');
+      const minSel = document.getElementById('wake-minute');
+      const ampmSel = document.getElementById('wake-ampm');
+      const msg = document.getElementById('wake-msg');
+      try {
+        const res = await fetch('/api/wakeup');
+        if (!res.ok) {
+          msg.textContent = 'Wake time unavailable.';
+          return;
+        }
+        const data = await res.json();
+        if (data.status === 'none') {
+          msg.textContent = 'Wake time not configured yet.';
+          return;
+        }
+        if (data.status !== 'ok') {
+          msg.textContent = data.message || 'Wake time unavailable.';
+          return;
+        }
+        const hour24 = data.hour;
+        const minute = data.minute;
+        if (typeof hour24 !== 'number' || typeof minute !== 'number') {
+          msg.textContent = 'Wake time unavailable.';
+          return;
+        }
+        const hour12 = ((hour24 + 11) % 12) + 1;
+        const ampm = hour24 < 12 ? 'AM' : 'PM';
+        hourSel.value = String(hour12);
+        minSel.value = String(minute);
+        ampmSel.value = ampm;
+        const hh = hour12.toString().padStart(2, '0');
+        const mm = minute.toString().padStart(2, '0');
+        msg.textContent = `Current wake time: ${hh}:${mm} ${ampm}`;
+      } catch (e) {
+        console.error('loadWakeTime error', e);
+        msg.textContent = 'Wake time unavailable.';
+      }
+    }
+
     document.getElementById('wifi-save').addEventListener('click', async () => {
       const ssid = document.getElementById('ssid').value;
       const password = document.getElementById('password').value;
       const msg = document.getElementById('wifi-msg');
+      const statusEl = document.getElementById('wifi-status');
       msg.textContent = 'Connecting...';
-
       try {
         const res = await fetch('/api/wifi/set', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ ssid, password })
         });
-
         const data = await res.json().catch(() => ({}));
-
         if (!res.ok || data.status === 'error') {
           msg.textContent = (data.message || 'failed to set Wi-Fi');
         } else {
           msg.textContent = data.message || 'Wi-Fi saved.';
+          if (statusEl) {
+            statusEl.textContent = `Current Wi-Fi: ${ssid}`;
+          }
+          loadNetworks();
         }
       } catch (e) {
+        console.error(e);
         msg.textContent = 'Error talking to device';
       }
     });
@@ -421,76 +579,10 @@
       }
     });
 
-    async function refreshBattery() {
-      const percentEl = document.getElementById('battery-percent');
-      const statusEl = document.getElementById('battery-status');
-      const extraEl = document.getElementById('battery-extra');
-      const fillEl = document.getElementById('battery-fill');
-
-      if (!percentEl || !statusEl || !fillEl) return;
-
-      try {
-        const res = await fetch('/api/battery');
-        if (!res.ok) {
-          throw new Error('HTTP ' + res.status);
-        }
-        const data = await res.json();
-
-        const level = data.level ?? null;
-        const charging = !!data.charging;
-        const plugged = !!data.plugged;
-        const model = data.model || '';
-        const temp = data.temperature;
-
-        if (level === null || Number.isNaN(level)) {
-          percentEl.textContent = '--%';
-          statusEl.textContent = 'Battery status unavailable';
-          fillEl.style.width = '0%';
-          fillEl.className = 'battery-fill';
-          extraEl.textContent = model ? model : '';
-          return;
-        }
-
-        const clamped = Math.max(0, Math.min(100, level));
-        percentEl.textContent = clamped.toFixed(0) + '%';
-        fillEl.style.width = clamped + '%';
-
-        // Color band
-        let band = 'high';
-        if (clamped <= 20) band = 'low';
-        else if (clamped <= 60) band = 'medium';
-        fillEl.className = 'battery-fill ' + band;
-
-        // Status text
-        let statusText = '';
-        if (charging && plugged) {
-          statusText = 'Charging ⚡';
-        } else if (plugged && !charging) {
-          statusText = 'Plugged in';
-        } else {
-          statusText = 'On battery';
-        }
-        statusEl.textContent = statusText;
-
-        // Extra info: model + temp if available
-        const bits = [];
-        if (model) bits.push(model);
-        if (typeof temp === 'number') bits.push(temp.toFixed(1) + '°C');
-          extraEl.textContent = bits.join(' • ') || '\u00A0';
-      } catch (e) {
-        console.error('battery error', e);
-        percentEl.textContent = '--%';
-        statusEl.textContent = 'Battery status error';
-        fillEl.style.width = '0%';
-        fillEl.className = 'battery-fill';
-        extraEl.textContent = '\u00A0';
-      }
-    }
-
     loadNetworks();
     loadConfig();
+    loadWakeTime();
     refreshBattery();
-    setInterval(refreshBattery, 15000); // update every 15s
   </script>
 </body>
 </html>
