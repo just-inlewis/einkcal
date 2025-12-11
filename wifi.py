@@ -34,6 +34,8 @@ except Exception as e:
     pisugar = None
     print("[device] Failed to connect to PiSugar server:", e)
 
+pisugar_lock = threading.Lock() if pisugar is not None else None
+
 # ---- small helpers ----
 
 def run(cmd) -> int:
@@ -60,7 +62,6 @@ def load_config():
 
 def save_config(cfg):
     CONFIG_PATH.write_text(json.dumps(cfg, indent=2))
-
 
 # ---- Wi-Fi helpers (NetworkManager based) ----
 
@@ -171,10 +172,37 @@ def schedule_wakeup_24h(hour: int, minute: int):
         target += timedelta(days=1)
     repeat_mask = 127  # every day
     print(f"[device] Scheduling wake-up at {target.isoformat()} repeat={repeat_mask}")
-    pisugar.set_battery_auto_power_on(False)
-    pisugar.rtc_alarm_set(target, repeat_mask)
-    pisugar.set_battery_auto_power_on(True)
+    if pisugar_lock is not None:
+        with pisugar_lock:
+            pisugar.set_battery_auto_power_on(False)
+            pisugar.rtc_alarm_set(target, repeat_mask)
+            pisugar.set_battery_auto_power_on(True)
+    else:
+        pisugar.set_battery_auto_power_on(False)
+        pisugar.rtc_alarm_set(target, repeat_mask)
+        pisugar.set_battery_auto_power_on(True)
     return target
+
+
+def get_current_ssid():
+    """
+    Returns the currently connected Wi-Fi SSID for IFACE, or None.
+    """
+    try:
+        out = run_out(["nmcli", "-t", "-f", "active,ssid", "dev", "wifi"])
+    except Exception as e:
+        print("[device] get_current_ssid error:", e)
+        return None
+
+    for line in out.splitlines():
+        if not line:
+            continue
+        parts = line.split(":", 1)
+        active = parts[0] if len(parts) > 0 else ""
+        ssid = parts[1] if len(parts) > 1 else ""
+        if active == "yes" and ssid:
+            return ssid
+    return None
 
 
 # ---- Flask routes ----
@@ -276,59 +304,95 @@ def api_wakeup():
         minute = int(payload.get("minute", -1))
     except Exception:
         return jsonify({"status": "error", "message": "Invalid hour/minute"}), 400
-
     if not (0 <= hour <= 23 and 0 <= minute <= 59):
         return jsonify({
             "status": "error",
             "message": "Hour must be 0–23 and minute 0–59"
         }), 400
-
     try:
         next_alarm = schedule_wakeup_24h(hour, minute)
     except Exception as e:
         print("[device] wakeup error:", e)
         return jsonify({"status": "error", "message": f"PiSugar error: {e}"}), 500
-
-    # Convert back to 12-hour format for friendly message
     hour12 = ((hour + 11) % 12) + 1
     ampm = "AM" if hour < 12 else "PM"
     friendly = f"{hour12:02d}:{minute:02d} {ampm}"
-
     return jsonify({
         "status": "ok",
-        "message": f"Wake up scheduled for {friendly}."
+        "message": f"Wake up scheduled for {friendly}.",
+        "hour": hour,
+        "minute": minute
     })
 
-@app.route("/api/battery", methods=["GET"])
-def api_battery():
-    """
-    Return basic battery status for the UI.
-
-    {
-      "level": 83.5,
-      "charging": true,
-      "plugged": true,
-      "model": "PiSugar 3",
-      "temperature": 31.2
-    }
-    """
-    # If PiSugar isn’t connected, fail gracefully
+@app.route("/api/wakeup", methods=["GET"])
+def get_wakeup():
     if pisugar is None:
         return jsonify({
             "status": "error",
             "message": "PiSugar not connected"
         }), 503
-
     try:
-        level = pisugar.get_battery_level()             # %
-        charging = pisugar.get_battery_charging()       # bool
-        plugged = pisugar.get_battery_power_plugged()   # bool
-        model = pisugar.get_model()                     # string
-        try:
-            temp = pisugar.get_temperature()
-        except Exception:
-            temp = None
+        if pisugar_lock is not None:
+            with pisugar_lock:
+                try:
+                    enabled = pisugar.get_rtc_alarm_enabled()
+                    if not enabled:
+                        return jsonify({"status": "none"})
+                except Exception:
+                    pass
+                alarm_dt = pisugar.get_rtc_alarm_time()
+        else:
+            try:
+                enabled = pisugar.get_rtc_alarm_enabled()
+                if not enabled:
+                    return jsonify({"status": "none"})
+            except Exception:
+                pass
+            alarm_dt = pisugar.get_rtc_alarm_time()
+    except Exception as e:
+        print("[device] get_wakeup error:", e)
+        return jsonify({
+            "status": "error",
+            "message": f"PiSugar error: {e}"
+        }), 500
+    if alarm_dt is None:
+        return jsonify({"status": "none"})
+    hour = int(alarm_dt.hour)
+    minute = int(alarm_dt.minute)
+    return jsonify({
+        "status": "ok",
+        "hour": hour,
+        "minute": minute
+    })
 
+
+@app.route("/api/battery", methods=["GET"])
+def api_battery():
+    if pisugar is None:
+        return jsonify({
+            "status": "error",
+            "message": "PiSugar not connected"
+        }), 503
+    try:
+        if pisugar_lock is not None:
+            with pisugar_lock:
+                level = pisugar.get_battery_level()             # %
+                charging = pisugar.get_battery_charging()       # bool
+                plugged = pisugar.get_battery_power_plugged()   # bool
+                model = pisugar.get_model()                     # string
+                try:
+                    temp = pisugar.get_temperature()
+                except Exception:
+                    temp = None
+        else:
+            level = pisugar.get_battery_level()
+            charging = pisugar.get_battery_charging()
+            plugged = pisugar.get_battery_power_plugged()
+            model = pisugar.get_model()
+            try:
+                temp = pisugar.get_temperature()
+            except Exception:
+                temp = None
         return jsonify({
             "status": "ok",
             "level": level,
@@ -343,6 +407,14 @@ def api_battery():
             "status": "error",
             "message": str(e)
         }), 500
+
+
+@app.route("/api/wifi/current", methods=["GET"])
+def wifi_current():
+    ssid = get_current_ssid()
+    if not ssid:
+        return jsonify({"status": "none", "ssid": None})
+    return jsonify({"status": "ok", "ssid": ssid})
 
 # ---- Connectivity loop ----
 
