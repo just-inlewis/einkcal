@@ -36,6 +36,51 @@ class CalHelper:
     def is_multiday(self, start, end):
         return start.date() != end.date()
 
+    def _has_mixed_naive_aware(self, event):
+        dtstart_prop = event.get("DTSTART")
+        dtend_prop = event.get("DTEND")
+        if dtstart_prop is None or dtend_prop is None:
+            return False
+        start = dtstart_prop.dt
+        end = dtend_prop.dt
+        if not (
+            isinstance(start, datetime.datetime)
+            and isinstance(end, datetime.datetime)
+        ):
+            return False
+        start_naive = (start.tzinfo is None)
+        end_naive = (end.tzinfo is None)
+        return start_naive != end_naive  # one naive, one aware
+
+    def strip_bad_series(self, cal: Calendar):
+        bad_uids = set()
+        bad_events = []
+        for event in cal.walk("VEVENT"):
+            uid = str(event.get("UID", ""))
+            if not uid:
+                continue
+            if self._has_mixed_naive_aware(event):
+                bad_uids.add(uid)
+                bad_events.append(event)
+        if not bad_uids:
+            return cal, bad_events
+        new_cal = Calendar()
+        for k, v in cal.items():
+            new_cal.add(k, v)
+        for component in cal.subcomponents:
+            if component.name == "VEVENT":
+                uid = str(component.get("UID", ""))
+                if uid in bad_uids:
+                    summary = component.get("SUMMARY")
+                    try:
+                        summary_txt = summary.to_ical().decode().strip()
+                    except Exception:
+                        summary_txt = str(summary)
+                    print(f"Handling mixed-tz event manually UID={uid!r}, summary={summary_txt!r}")
+                    continue
+            new_cal.add_component(component)
+        return new_cal, bad_events
+
     def retrieve_events(self, calendar, startDate, endDate, localTZ, thresholdHours):
         session = requests.Session()
         adapter = requests.adapters.HTTPAdapter(max_retries=self.retry_strategy())
@@ -53,11 +98,13 @@ class CalHelper:
             self.logger.error(f"Error parsing iCal data: {e}")
             return []
         events = []
+        cal, bad_events = self.strip_bad_series(cal)
         try:
-            occurrences = recurring_ical_events.of(cal).between(startDate, endDate)
+            occurrences = list(recurring_ical_events.of(cal).between(startDate, endDate))
         except Exception as e:
             self.logger.error(f"Error expanding recurring events: {e}")
-            occurrences = cal.walk("VEVENT")
+            occurrences = list(cal.walk("VEVENT"))
+        occurrences.extend(bad_events)
         for event in occurrences:
             status = str(event.get("STATUS", "CONFIRMED")).upper()
             if status == "CANCELLED":
